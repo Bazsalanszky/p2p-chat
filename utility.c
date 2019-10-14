@@ -1,6 +1,8 @@
 //
 // Készítette: Toldi Balázs Ádám
-// Dátum:  2019. 10. 11..
+// Dátum:  2019. 10. 11.
+//
+// Ebben a file-ban olyan függvényeket találunk, amelyeket sok helyen fel lehet használni vagy máshová nem illeszkedne
 //
 
 #include "utility.h"
@@ -18,7 +20,7 @@ char* generateSeed(int len){
     return result;
 }
 map* getHandshakeData(char* text,int* len){
-    if (text[0] == '\n')
+    if (text[0] == '@')
         memmove(text, text+1, strlen(text));
     int count = 0;
     for(int i = 0;text[i] != '\0';++i){
@@ -57,5 +59,18 @@ char* map_getValue(map m[],int len, char* key){
         if(strcmp(m[i].key,key) == 0)
             return m[i].value;
     }
-    return NULL;
+    return "UNDEFINED";
+}
+void md5(char *string, char outputBuffer[33]){
+    unsigned char hash[MD5_DIGEST_LENGTH];
+    MD5_CTX sha256;
+    MD5_Init(&sha256);
+    MD5_Update(&sha256, string, strlen(string));
+    MD5_Final(hash, &sha256);
+    int i = 0;
+    for(i = 0; i < MD5_DIGEST_LENGTH; i++)
+    {
+        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+    }
+    outputBuffer[64] = 0;
 }
