@@ -7,7 +7,7 @@
 //Amikor mi csatlakozunk egy peerhez
 int peer_ConnetctTo(char* ip,int port,Peer peerList[],int* peerCount, node_data my,fd_set* fdSet){
     if(*peerCount+1 >= DEFAULT_MAX_PEER_COUNT){
-        printf("Couldn't connect,because the max peer count is reached!\n");
+        logger_log("Couldn't connect,because the max peer count is reached!");
         return -1;
     }
     struct sockaddr_in hint;
@@ -23,27 +23,27 @@ int peer_ConnetctTo(char* ip,int port,Peer peerList[],int* peerCount, node_data 
     if (res == SOCKET_ERROR) {
         return -1;
     }
-    printf("Connected to peer!Sending handshake...\n");
+    logger_log("Connected to peer!Sending handshake...");
     char handshake[DEFAULT_BUFLEN];
     if(strlen(my.nick) == 0)
         sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
     else sprintf(handshake,"@id=%s&port=%d&nickname=",my.id,my.port,my.nick);
     res = send(sock,handshake,strlen(handshake),0);
     if (res == SOCKET_ERROR) {
-        printf("Error sending peer list!Disconnecting...\n" );
+        logger_log("Error sending peer list!Disconnecting..." );
         closesocket(sock);
         return -1 ;
     }
-    printf("Sent!Waiting for response...\n");
+    logger_log("Sent!Waiting for response...");
     char buf[DEFAULT_BUFLEN];
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
-        printf("Error: Invalid response!\n");
+        logger_log("Error: Invalid response!");
         closesocket(sock);
         return -1;
     }
     if(buf[0] != '@'){
-        printf("Error: Invalid response!\n");
+        logger_log("Error: Invalid response!");
         return -1;
     }
     int len;
@@ -52,7 +52,9 @@ int peer_ConnetctTo(char* ip,int port,Peer peerList[],int* peerCount, node_data 
     strcpy(node.ip,ip);
 
     if(map_isFound(m,len,"valid") && strcmp("false", map_getValue(m, len, "valid")) == 0) {
-        printf("Peer closed connection! Error: %s\n",map_getValue(m,len,"error"));
+        char error[129];
+        sprintf(error,"Peer closed connection! Error: %s\n",map_getValue(m,len,"error"));
+        logger_log(error);
         closesocket(sock);
         return -1;
     }
@@ -61,14 +63,14 @@ int peer_ConnetctTo(char* ip,int port,Peer peerList[],int* peerCount, node_data 
     if(map_isFound(m,len,"id")) {
         strcpy(node.id, map_getValue(m, len, "id"));
     } else {
-            printf("Error: Invalid response!ID not found in handshake.\n");
-            return -1;
+        logger_log("Error: Invalid response!ID not found in handshake.");
+        return -1;
     }
     if(map_isFound(m,len,"port")) {
         node.port = atoi(map_getValue(m, len, "port"));
     } else {
-            printf("Error: Invalid response!Port not found in handshake.\n");
-            return -1;
+        logger_log("Error: Invalid response!Port not found in handshake.");
+        return -1;
     }
 
     if(map_isFound(m,len,"nickname")) {
@@ -85,7 +87,6 @@ int peer_ConnetctTo(char* ip,int port,Peer peerList[],int* peerCount, node_data 
     if(map_isFound(m,len,"peers")) {
         char* tmp = strtok(map_getValue(m,len,"peers"),",");
         while(tmp != NULL){
-            printf("%s\t%d\n",tmp,*peerCount);
             char ip[NI_MAXHOST];
              int port;
              sscanf(tmp, "%[^:]:%d", ip, &port);
@@ -94,7 +95,9 @@ int peer_ConnetctTo(char* ip,int port,Peer peerList[],int* peerCount, node_data 
             tmp = strtok(NULL,",");
         }
     }
-    printf("Peer validated (%s->%s)!\n",node.ip,node.id);
+    char*msg = (char*) calloc(sizeof(char)*129, sizeof(char));
+    sprintf(msg,"Peer validated (%s->%s)!",node.ip,node.id);
+    logger_log(msg);
     return 0;
 }
 
@@ -127,18 +130,19 @@ int peer_HandleConnection(SOCKET listening,Peer peerList[],int* peerCount, node_
 
     int len;
     map *m = getHandshakeData(buf,&len);
+
     node_data node;
     strcpy(node.ip,ip);
     if(map_isFound(m,len,"id")) {
         strcpy(node.id, map_getValue(m, len, "id"));
     } else {
-        printf("Error: Invalid response!ID not found in handshake.\n");
+        logger_log("Error: Invalid response!ID not found in handshake.");
         return -1;
     }
     if(map_isFound(m,len,"port")) {
         node.port = atoi(map_getValue(m, len, "port"));
     } else {
-        printf("Error: Invalid response!Port not found in handshake.\n");
+        logger_log("Error: Invalid response!Port not found in handshake.");
         return -1;
     }
 
@@ -146,18 +150,18 @@ int peer_HandleConnection(SOCKET listening,Peer peerList[],int* peerCount, node_
         strcpy(node.nick, map_getValue(m, len, "nickname"));
     }
     if(peer_isFoundInList(peerList,*peerCount,node.id)){
-        printf("Handshake received, but the id sent is taken! Dropping peer...\n");
+        logger_log("Handshake received, but the id sent is taken! Dropping peer...");
         char handshake[1024] = "@valid=false&error=ID_TAKEN";
         int res = send(sock, handshake, strlen(handshake), 0);
         if (res == SOCKET_ERROR) {
-            printf("Error sending error message!Disconnecting...\n");
+            logger_log("Error sending error message!Disconnecting...");
             closesocket(sock);
             return -1;
         }
         closesocket(sock);
         return -1;
     }
-    printf("Handshake recived! Sending response!\n");
+    logger_log("Handshake recived! Sending response!");
     char handshake[DEFAULT_BUFLEN];
     if(strlen(my.nick) == 0)
         sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
@@ -181,7 +185,7 @@ int peer_HandleConnection(SOCKET listening,Peer peerList[],int* peerCount, node_
     }
     int res = send(sock, handshake, strlen(handshake), 0);
     if (res == SOCKET_ERROR) {
-        printf("Error sending handshake!Disconnecting...\n");
+        logger_log("Error sending handshake!Disconnecting...");
         closesocket(sock);
         return -1;
     }
@@ -191,7 +195,9 @@ int peer_HandleConnection(SOCKET listening,Peer peerList[],int* peerCount, node_
     p.sockaddr = client;
     peerList = peer_addTolist(peerList,peerCount,p);
     FD_SET(sock,fdSet);
-    printf("Peer successfully connected from %s whit id %s\n",inet_ntoa(client.sin_addr),node.id);
+    char*msg = (char*) calloc(sizeof(char)*129, sizeof(char));
+    sprintf(msg,"Peer successfully connected from %s with id %s",inet_ntoa(client.sin_addr),node.id);
+    logger_log(msg);
     return 0;
 }
 
@@ -205,7 +211,7 @@ bool peer_isFoundInList(struct peer list[],int peerCount,char* id){
 }
 bool peer_isIPfoundInList(struct peer list[],int peerCount,char* ip,int port){
     for(int i=0;i < peerCount;++i){
-        if(list[i].peerData.ip == ip && list[i].peerData.port == port) {
+        if(strcmp(list[i].peerData.ip,ip) == 0 && list[i].peerData.port == port) {
             return true;
         }
     }
@@ -214,10 +220,7 @@ bool peer_isIPfoundInList(struct peer list[],int peerCount,char* ip,int port){
 
 
 Peer* peer_addTolist(struct peer list[],int *peerCount, struct peer p){
-    Peer *peers = (Peer*) malloc(sizeof(Peer)*((*peerCount)+1));
-    for (int j = 0; j < *peerCount; ++j) {
-        peers[j] = list[j];
-    }
+    Peer *peers = (Peer*) realloc(list,sizeof(Peer)*((*peerCount)+1));
     list[*peerCount] = p;
     *peerCount += 1;
     return peers;

@@ -1,8 +1,13 @@
 //
 // Created by Balazs Tolid on 2019. 10. 09..
 //
+#ifndef P2P_UTILITY_H
 #include "utility.h"
 
+#endif
+#ifndef  P2P_PEER_H
+#define P2P_PEER_H
+#endif
 #define DEFAULT_MAX_PEER_COUNT 64
 
 typedef struct Node_data {
