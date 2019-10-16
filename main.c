@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "peer.h"
-#include "modules/webio/webio.h"
 
+#include "modules/webio/webio.h"
+#include "modules/config.h"
 
 #pragma comment(lib, "ws2_32.lib")
 //#include "webinterface.h"
@@ -17,7 +18,8 @@
 
 
 int main(void) {
-    logger_log("%s","Goood");
+    map config = config_load();
+
     FILE *seed_file;
     seed_file = fopen("seed.txt", "r");
     char seed[513];
@@ -34,10 +36,13 @@ int main(void) {
     char id[MD5_DIGEST_LENGTH];
     md5(seed, id);
     node_data mynode;
-    strcpy(mynode.id, id);
-    strcpy(mynode.nick, "");
+    strncpy(mynode.id, id,MD5_DIGEST_LENGTH);
+    if(map_isFound(config,"nickname"))
+        strcpy(mynode.nick,map_getValue(config,"nickname"));
+    if(map_isFound(config,"port"))
+        mynode.port = atoi(map_getValue(config,"port"));
+    else
     mynode.port = atoi(DEFAULT_PORT);
-
     logger_log("Initialising core...");
     WSADATA ws;
     int res = WSAStartup(MAKEWORD(2, 2), &ws);
@@ -60,7 +65,9 @@ int main(void) {
     hint.ai_next = NULL;
 
     //TODO: Use config to determine port
-    res = getaddrinfo(NULL, DEFAULT_PORT, &hint, &result);
+    char sport[10];
+    sprintf( sport, "%d", mynode.port);
+    res = getaddrinfo(NULL, sport, &hint, &result);
     if (res != 0) {
         logger_log("Error creating address information! Error code: %d", WSAGetLastError());
         WSACleanup();
@@ -112,8 +119,8 @@ int main(void) {
 
     //Connecting to peers
     logger_log("Checking peers.txt for peers...");
-    Peer *peerList = (Peer *) malloc(sizeof(Peer) * DEFAULT_MAX_PEER_COUNT);
-    int peerCount = 0;
+    peerList peerList1;
+    peer_initList(&peerList1);
 
     FILE *peer_file;
     peer_file = fopen("peers.txt", "r");
@@ -126,7 +133,7 @@ int main(void) {
         char ip[NI_MAXHOST];
         int port;
         while (fscanf(peer_file, "%[^:]:%d", ip, &port) != EOF) {
-            if(peer_ConnetctTo(ip, port, peerList, &peerCount, mynode,&master) != 0)
+            if(peer_ConnetctTo(ip, port, &peerList1, mynode,&master) != 0)
                 logger_log("Error while connecting to peer...");
         }
 
@@ -152,20 +159,20 @@ int main(void) {
         for (int i = 0; i < count; i++) {
             SOCKET sock = copy.fd_array[i];
             if (sock == listening) {
-                if(peer_HandleConnection(listening, peerList, &peerCount, mynode,&master) != 0)
+                if(peer_HandleConnection(listening, &peerList1, mynode,&master) != 0)
                     logger_log("Error while receiving connection...");
             }else if(sock == webIo.socket ){
-                webio_handleRequest(webIo,peerList,peerCount);
+                webio_handleRequest(webIo,peerList1);
             } else {
                 char buf[DEFAULT_BUFLEN];
                 ZeroMemory(buf, DEFAULT_BUFLEN);
                 int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
                 if (inBytes <= 0) {
                     //Peer disconnect
-                    int k = peer_getPeer(peerList, peerCount, sock);
+                    int k = peer_getPeer(peerList1, sock);
                     if (k != -1) {
-                        logger_log("Peer disconnected(%s->%s)", inet_ntoa(peerList[k].sockaddr.sin_addr),peerList[k].peerData.id);
-                        peer_removeFromList(peerList, &peerCount, k);
+                        logger_log("Peer disconnected(%s->%s)", inet_ntoa(peerList1.array[k].sockaddr.sin_addr),peerList1.array[k].peerData.id);
+                        peer_removeFromList(&peerList1, k);
                         closesocket(sock);
                         FD_CLR(sock, &master);
                     }
@@ -174,8 +181,8 @@ int main(void) {
         }
     }
 
-
-    free(peerList);
+    free(&config);
+    free(&peerList1);
     closesocket(listening);
     WSACleanup();
     return 0;

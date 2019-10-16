@@ -1,18 +1,14 @@
 //
 // Created by Balazs Tolid on 2019. 10. 09..
 //
-#ifndef P2P_UTILITY_H
+#pragma once
 #include "utility.h"
 
-#endif
-#ifndef  P2P_PEER_H
-#define P2P_PEER_H
-#endif
 #define DEFAULT_MAX_PEER_COUNT 64
 
 typedef struct Node_data {
     char ip[NI_MAXHOST];
-    char id[MD5_DIGEST_LENGTH];
+    char id[MD5_DIGEST_LENGTH+1];
     char nick[30];
     int port;
 } node_data;
@@ -23,19 +19,24 @@ typedef struct peer{
     struct sockaddr_in sockaddr;
 } Peer;
 
-
-//TODO: Create peerlist
+typedef struct peerList{
+    size_t size;    // A lista által lefoglalt hely
+    size_t length;  // A listán található elemek száma
+    Peer * array;    // A lista
+}peerList;
 
 //Kouhai peer
-int peer_ConnetctTo(char* ip,int port,Peer peerList[],int *peerCount, node_data my,fd_set* fdSet);
+int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* fdSet);
 //Senpai peer
-int peer_HandleConnection(SOCKET listening,Peer peerList[],int *peerCount, node_data my,fd_set* fdSet);
+int peer_HandleConnection(SOCKET listening,peerList* peerList, node_data my,fd_set* fdSet);
 
-bool peer_isFoundInList(struct peer list[],int peerCount,char* id);
-bool peer_isIPfoundInList(struct peer list[],int peerCount,char* ip,int port);
-Peer* peer_addTolist(struct peer list[],int *peerCount, struct peer p);
+void peer_initList(peerList *list);
 
-Peer* peer_removeFromList(struct peer list[],int *peerCount, int i);
+bool peer_isFoundInList(struct peerList list,char* id);
+bool peer_isIPfoundInList(struct peerList list,char* ip,int port);
+void peer_addTolist(struct peerList* list, struct peer p);
 
-int peer_getPeer(struct peer list[],int peerCount,SOCKET socket);
+void peer_removeFromList(struct peerList *list, int i);
+
+int peer_getPeer(struct peerList list,SOCKET socket);
 

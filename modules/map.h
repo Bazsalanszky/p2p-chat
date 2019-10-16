@@ -4,7 +4,6 @@
 //
 
 #pragma once
-#include <stdarg.h>
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
@@ -23,7 +22,7 @@ typedef struct Map
     pair   *pairs;
 } map,config;
 
-void initMap(map * m);
+void map_init(map *m);
 
 bool map_isFound(map m, char* key);
 
@@ -33,7 +32,7 @@ void map_addPair(map *m, pair p);
 
 pair map_make_pair(char *key,char *value);
 
-void map_init(map *m);
+
 
 //Debug-hoz hasznos
 void map_dump(map m);

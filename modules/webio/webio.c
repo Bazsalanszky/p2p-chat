@@ -83,7 +83,7 @@ int webio_create(int port,char* folder,struct Node_data myData,WebIO *webIo){
     return 0;
 }
 
-int webio_handleRequest(WebIO wio,Peer list[],int peerCount){
+int webio_handleRequest(WebIO wio,peerList list){
     SOCKET client = accept(wio.socket,NULL,NULL);
     char buf[8192];
     int res = recv(client,buf,8192,0);
@@ -98,9 +98,9 @@ int webio_handleRequest(WebIO wio,Peer list[],int peerCount){
     if(strcmp(req,"GET") == 0) {
         char file[50];
         sscanf(buf, "%*s %s", file);
-        res = webio_handleGETrequest(client,wio,file, list, peerCount);
+        res = webio_handleGETrequest(client,wio,file, list);
     }else if(strcmp(req,"POST") == 0)
-        res = webio_handlePOSTrequest(client,wio, list,peerCount);
+        res = webio_handlePOSTrequest(client,wio, list);
     else
         res = -1;
     return res;
@@ -138,7 +138,7 @@ char* webio_getFiletype(char* filename){
     }
     return type;
 }
-int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,Peer list[],int peerCount){
+int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
 
     char buf[8192];
     sscanf(buf,"%*s %s",file);
@@ -154,7 +154,7 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,Peer list[],int pe
                          "Content-Language: en\r\n"
                          "Content-Type: text/html\r\n\r\n"
         );
-        strcat(response,getIndex(wio.folder,list,peerCount));
+        strcat(response,getIndex(wio.folder,list));
     }else {
         strcat(path, file);
 
@@ -204,7 +204,7 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,Peer list[],int pe
     closesocket(client);
 }
 
-int webio_handlePOSTrequest(SOCKET client,WebIO wio,Peer list[],int peerCount){
+int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list){
 
 }
 char* webio_getHeader(char* folder) {
@@ -228,17 +228,21 @@ char* webio_getHeader(char* folder) {
     }else return "<html>";
 }
 
-char* getIndex(char* folder,Peer list[],int count){
+char* getIndex(char* folder,peerList list){
     char* content = (char*) calloc(sizeof(char*)*8192,1);
     char * header = webio_getHeader(folder);
 
     strcat(content,header);
     strcat(content,"<h1>Peers:</h1>\n");
-    if(count > 0) {
+    if(list.length > 0) {
         strcat(content, "<ul>\n");
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < list.length; ++i) {
             strcat(content, "<li>");
-            strcat(content, list[i].peerData.id);
+            if(strlen(list.array[i].peerData.nick) != 0){
+                strcat(content, list.array[i].peerData.nick);
+                strcat(content, " - ");
+            }
+            strcat(content, list.array[i].peerData.id);
             strcat(content, "</li>\n");
         }
         strcat(content, "</ul>\n");

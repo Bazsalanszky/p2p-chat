@@ -20,6 +20,7 @@ char* generateSeed(int len){
     return result;
 }
 map getHandshakeData(char* text){
+
     map result;
     map_init(&result);
     if (text[0] == '@')
@@ -30,9 +31,8 @@ map getHandshakeData(char* text){
             count++;
     }
     int i =0;
-    const char c[2] = "&";
     char *tmp;
-    tmp = strtok (text,c);
+    tmp = strtok (text,"&");
 
     while (tmp != NULL && i <count+1)
     {
