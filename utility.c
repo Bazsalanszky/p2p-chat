@@ -19,7 +19,9 @@ char* generateSeed(int len){
     result[len] = '\0';
     return result;
 }
-map* getHandshakeData(char* text,int* len){
+map getHandshakeData(char* text){
+    map result;
+    map_init(&result);
     if (text[0] == '@')
         memmove(text, text+1, strlen(text));
     int count = 0;
@@ -27,8 +29,6 @@ map* getHandshakeData(char* text,int* len){
         if(text[i] == '&')
             count++;
     }
-    *len = count+1;
-    map * m = (map*) malloc(sizeof(map)*(*len));
     int i =0;
     const char c[2] = "&";
     char *tmp;
@@ -36,31 +36,16 @@ map* getHandshakeData(char* text,int* len){
 
     while (tmp != NULL && i <count+1)
     {
-        char key[50];
-        char value[50];
+        char key[65];
+        char value[65];
         sscanf(tmp,"%[^=]=%s",key,value);
-        strcpy(m[i].key,key);
-        strcpy(m[i].value,value);
+        map_addPair(&result,map_make_pair(key,value));
         ++i;
         tmp = strtok (NULL, "&");
     }
-    return  m;
-}
-bool map_isFound(map map[],int len, char* key){
-    for (int i = 0; i < len; ++i) {
-        if(strcmp(map[i].key,key) == 0)
-            return true;
-    }
-    return false;
+    return result;
 }
 
-char* map_getValue(map m[],int len, char* key){
-    for (int i = 0; i < len; ++i) {
-        if(strcmp(m[i].key,key) == 0)
-            return m[i].value;
-    }
-    return "UNDEFINED";
-}
 void md5(char *string, char outputBuffer[33]){
     unsigned char hash[MD5_DIGEST_LENGTH];
     MD5_CTX sha256;
@@ -88,20 +73,14 @@ void logger_log(const char* _Format, ...){
     strftime(buf, 26, "%Y.%m.%d. %H:%M:%S", tm_info);
     char string[513];
     printf("[%s]\t",buf);
-    fprintf(fp,"[%s]\t");
+    fprintf(fp,"[%s]\t",buf);
     va_list args;
     va_start (args, _Format);
     vprintf(_Format,args);
     vfprintf(fp,_Format,args);
     va_end(args);
     fprintf(fp,"\n");
-    printf(stdout,"\n");
+    printf("\n");
 
     fclose(fp);
-}
-
-void map_dump(map *m, int len) {
-    for (int i = 0; i <len ; ++i) {
-        printf("%s %s\n",m[i].key,m[i].value);
-    }
 }
