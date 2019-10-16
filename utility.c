@@ -12,7 +12,7 @@ char* generateSeed(int len){
                                  "ABCDEFGHJKLMNPQRSTUVWXYZ"
                                  "abcdefghijkmnopqrstuvwxyz";
     srand(time(0));
-    char *result = malloc(sizeof(char) * 512);
+    char *result = malloc(sizeof(char) * len+1);
     for(int i = 0;i<len;i++){
         result[i] = base58[rand() % 58];
     }
