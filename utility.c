@@ -74,3 +74,34 @@ void md5(char *string, char outputBuffer[33]){
     }
     outputBuffer[64] = 0;
 }
+
+void logger_log(const char* _Format, ...){
+    FILE * fp;
+    fp  = fopen("log.txt","a");
+    time_t timer;
+    char buf[26];
+    struct tm* tm_info;
+
+    time(&timer);
+    tm_info = localtime(&timer);
+
+    strftime(buf, 26, "%Y.%m.%d. %H:%M:%S", tm_info);
+    char string[513];
+    printf("[%s]\t",buf);
+    fprintf(fp,"[%s]\t");
+    va_list args;
+    va_start (args, _Format);
+    vprintf(_Format,args);
+    vfprintf(fp,_Format,args);
+    va_end(args);
+    fprintf(fp,"\n");
+    printf(stdout,"\n");
+
+    fclose(fp);
+}
+
+void map_dump(map *m, int len) {
+    for (int i = 0; i <len ; ++i) {
+        printf("%s %s\n",m[i].key,m[i].value);
+    }
+}
