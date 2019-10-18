@@ -39,4 +39,5 @@ void peer_addTolist(struct peerList* list, struct peer p);
 void peer_removeFromList(struct peerList *list, int i);
 
 int peer_getPeer(struct peerList list,SOCKET socket);
+int peer_getIDPeer(struct peerList list,char *c);
 

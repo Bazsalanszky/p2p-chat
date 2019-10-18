@@ -14,7 +14,7 @@
 #define DEFAULT_PORT "6327"
 #endif
 #define DEFAULT_INTERFACE_PORT "5081"
-#define DEFAULT_WWW_FOLDER "htdocs"
+#define DEFAULT_WWW_FOLDER "htdocs/"
 
 
 int main(void) {

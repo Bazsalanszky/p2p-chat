@@ -99,32 +99,40 @@ int webio_handleRequest(WebIO wio,peerList list){
         char file[50];
         sscanf(buf, "%*s %s", file);
         res = webio_handleGETrequest(client,wio,file, list);
-    }else if(strcmp(req,"POST") == 0)
-        res = webio_handlePOSTrequest(client,wio, list);
-    else
+    }else if(strcmp(req,"POST") == 0) {
+        int i = strlen(buf)-1;
+        while(buf[i] != '\n'){
+            i--;
+        }
+        char tmp[8196];
+        strcpy(tmp,buf+i);
+        map post = getHandshakeData(tmp);
+
+        res = webio_handlePOSTrequest(client, wio, list);
+    }else
         res = -1;
     return res;
 
 }
 char* webio_getMIMEtype(char* filename){
     char* ext = webio_getFiletype(filename);
-    if (ext == "html")
+    if (strcmp(ext,"html") == 0)
         return "text/html";
-    else if (ext == "json")
+    else if (strcmp(ext, "json") == 0)
         return "application/json";
-    else if (ext == "js")
+    else if (strcmp(ext, "js")== 0)
         return "application/javascript";
-    else if (ext == "css")
+    else if (strcmp(ext, "css")== 0)
         return "text/css";
-    else if (ext == "jpg")
+    else if (strcmp(ext, "jpg")== 0)
         return "image/jpeg";
-    else if (ext == "png")
+    else if (strcmp(ext, "png")== 0)
         return "image/png";
-    else if (ext == "ico")
+    else if (strcmp(ext, "ico")== 0)
         return "image/ico";
-    else if (ext == "xml")
+    else if (strcmp(ext, "xml")== 0)
         return "text/xml";
-    else if (ext == "zip")
+    else if (strcmp(ext, "zip")== 0)
         return "application/zip";
     else return "text/plain";
 }
@@ -148,14 +156,24 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
     ZeroMemory(path,sizeof(path));
     strcat(path,wio.folder);
     char *response = (char *) malloc(sizeof(char) * 8192);
-    if(strcmp(file,"/") == 0) {
+    if (file[0] == '/')
+        memmove(file, file+1, strlen(file));
+    if(strlen(file) == 0) {
         strcat(response, "HTTP/1.1 200 OK "
                          "Content-Encoding: gzip\r\n"
                          "Content-Language: en\r\n"
                          "Content-Type: text/html\r\n\r\n"
         );
         strcat(response,getIndex(wio.folder,list));
-    }else {
+
+    }else if(peer_isFoundInList(list,file)){
+        strcat(response, "HTTP/1.1 200 OK "
+                         "Content-Encoding: gzip\r\n"
+                         "Content-Language: en\r\n"
+                         "Content-Type: text/html\r\n\r\n"
+        );
+        strcat(response,getPeerPage(wio.folder,list.array[peer_getIDPeer(list,file)]));
+    } else{
         strcat(path, file);
 
         FILE *fp;
@@ -182,9 +200,10 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
             strcat(response, "HTTP/1.1 200 OK "
                              "Content-Encoding: gzip\r\n"
                              "Content-Language: en\r\n"
-                             "Content-Type: text/html\r\n\r\n"
+                             "Content-Type: "
             );
-
+            strcat(response,webio_getMIMEtype(file));
+            strcat(response,"\r\n\r\n");
             strcat(response, content);
         } else {
 
@@ -204,8 +223,8 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
     closesocket(client);
 }
 
-int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list){
-
+int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
+    shutdown(client,SD_RECEIVE);
 }
 char* webio_getHeader(char* folder) {
     FILE *fp;
@@ -238,11 +257,15 @@ char* getIndex(char* folder,peerList list){
         strcat(content, "<ul>\n");
         for (int i = 0; i < list.length; ++i) {
             strcat(content, "<li>");
+            strcat(content, "<a href=\"");
+            strcat(content, list.array[i].peerData.id);
+            strcat(content, "\">");
             if(strlen(list.array[i].peerData.nick) != 0){
                 strcat(content, list.array[i].peerData.nick);
                 strcat(content, " - ");
             }
             strcat(content, list.array[i].peerData.id);
+            strcat(content, "</a>\n");
             strcat(content, "</li>\n");
         }
         strcat(content, "</ul>\n");
@@ -254,8 +277,18 @@ char* getIndex(char* folder,peerList list){
                    "   window.location.reload(1);\n"
                    "}, 5000);</script>\n");
 
+    strcat(content,"<form method=\"POST\"><input  name=\"msg\" type=\"text\"/><input name=\"s\" type=\"submit\"/></form>");
     strcat(content,"</div>\n");
     strcat(content,"</body>\n");
     strcat(content,"</html>\n");
+    return content;
+}
+
+char *getPeerPage(char *folder, Peer p) {
+    char* content = (char*) calloc(sizeof(char*)*8192,1);
+    char * header = webio_getHeader(folder);
+    sprintf(content,"%s\n"
+                    "<h1>%s</h1>\n"
+                    "<form method=\"POST\"><input  name=\"msg\" type=\"text\"/><input name=\"s\" type=\"submit\"/></form>",header,p.peerData.id);
     return content;
 }

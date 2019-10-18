@@ -252,3 +252,11 @@ int peer_getPeer(struct peerList list,SOCKET socket){
     }
     return  -1;
 }
+
+int peer_getIDPeer(struct peerList list, char* c) {
+    for (int i = 0; i < list.length; ++i) {
+        if(strcmp(list.array[i].peerData.id,c) == 0)
+            return i;
+    }
+    return  -1;
+}
