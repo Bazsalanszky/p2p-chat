@@ -1,0 +1,6 @@
+C:/msys64/home/Balazs/p2p-chat/build/CMakeFiles/test.dir
+C:/msys64/home/Balazs/p2p-chat/build/CMakeFiles/p2p-3.dir
+C:/msys64/home/Balazs/p2p-chat/build/CMakeFiles/p2p.dir
+C:/msys64/home/Balazs/p2p-chat/build/CMakeFiles/p2p-2.dir
+C:/msys64/home/Balazs/p2p-chat/build/CMakeFiles/ALL_BUILD.dir
+C:/msys64/home/Balazs/p2p-chat/build/CMakeFiles/ZERO_CHECK.dir

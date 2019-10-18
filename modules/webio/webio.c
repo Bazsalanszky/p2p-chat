@@ -104,16 +104,18 @@ int webio_handleRequest(WebIO wio,peerList list){
         while(buf[i] != '\n'){
             i--;
         }
+        i++;
         char tmp[8196];
         strcpy(tmp,buf+i);
         map post = getHandshakeData(tmp);
 
-        res = webio_handlePOSTrequest(client, wio, list);
+        res = webio_handlePOSTrequest(client, wio,list,post);
     }else
         res = -1;
     return res;
 
 }
+
 char* webio_getMIMEtype(char* filename){
     char* ext = webio_getFiletype(filename);
     if (strcmp(ext,"html") == 0)
@@ -129,7 +131,7 @@ char* webio_getMIMEtype(char* filename){
     else if (strcmp(ext, "png")== 0)
         return "image/png";
     else if (strcmp(ext, "ico")== 0)
-        return "image/ico";
+        return "image/x-icon";
     else if (strcmp(ext, "xml")== 0)
         return "text/xml";
     else if (strcmp(ext, "zip")== 0)
@@ -146,6 +148,7 @@ char* webio_getFiletype(char* filename){
     }
     return type;
 }
+
 int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
 
     char buf[8192];
@@ -225,6 +228,29 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
 
 int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
     shutdown(client,SD_RECEIVE);
+    char *response = (char *) malloc(sizeof(char) * 8192);
+    sprintf(response, "HTTP/1.1 304 Not Modified "
+
+    );
+    //strcat(response,getPeerPage(wio.folder,));
+
+    int res = send(client,response,strlen(response),0);
+    if(res == SOCKET_ERROR ) {
+        logger_log("Error with io");
+        return -1;
+    }
+    shutdown(client,SD_SEND);
+    if(map_isFound(post,"id") && map_isFound(post,"message")){
+        char buf[DEFAULT_BUFLEN];
+        sprintf(buf,"@message=%s",map_getValue(post,"message"));
+        res = send(list.array[peer_getIDPeer(list,map_getValue(post,"id"))].socket,buf,DEFAULT_BUFLEN,0);
+        if(res == SOCKET_ERROR){
+            logger_log("Error sending message.Error: %d",WSAGetLastError());
+            return -1;
+        }
+        logger_log("Message sent to %s",map_getValue(post,"id"));
+    }else map_dump(post);
+
 }
 char* webio_getHeader(char* folder) {
     FILE *fp;
@@ -276,8 +302,6 @@ char* getIndex(char* folder,peerList list){
     strcat(content,"<script>setTimeout(function(){\n"
                    "   window.location.reload(1);\n"
                    "}, 5000);</script>\n");
-
-    strcat(content,"<form method=\"POST\"><input  name=\"msg\" type=\"text\"/><input name=\"s\" type=\"submit\"/></form>");
     strcat(content,"</div>\n");
     strcat(content,"</body>\n");
     strcat(content,"</html>\n");
@@ -289,6 +313,6 @@ char *getPeerPage(char *folder, Peer p) {
     char * header = webio_getHeader(folder);
     sprintf(content,"%s\n"
                     "<h1>%s</h1>\n"
-                    "<form method=\"POST\"><input  name=\"msg\" type=\"text\"/><input name=\"s\" type=\"submit\"/></form>",header,p.peerData.id);
+                    "<div style=\"width: 75%%;margin: auto auto;bottom:0;position: fixed\"><form method=\"POST\"><textarea class=\"form-control\" name=\"message\"rows=\"4\" cols=\"50\"></textarea><input name=\"id\" type=\"text\" value=\"%s\" style=\"display:none\"/><input name=\"s\" type=\"submit\"/></form>",header,p.peerData.id,p.peerData.id);
     return content;
 }

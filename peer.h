@@ -8,7 +8,7 @@
 
 typedef struct Node_data {
     char ip[NI_MAXHOST];
-    char id[MD5_DIGEST_LENGTH+1];
+    char id[33];
     char nick[30];
     int port;
 } node_data;
@@ -40,4 +40,5 @@ void peer_removeFromList(struct peerList *list, int i);
 
 int peer_getPeer(struct peerList list,SOCKET socket);
 int peer_getIDPeer(struct peerList list,char *c);
+Peer peer_getPeer_data(struct peerList list,char *c);
 

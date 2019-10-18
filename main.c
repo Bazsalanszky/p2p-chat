@@ -35,8 +35,10 @@ int main(void) {
     fclose(seed_file);
     char id[MD5_DIGEST_LENGTH];
     md5(seed, id);
+
     node_data mynode;
-    strncpy(mynode.id, id,MD5_DIGEST_LENGTH);
+    strcpy(mynode.id, id);
+
     if(map_isFound(config,"nickname"))
         strcpy(mynode.nick,map_getValue(config,"nickname"));
     if(map_isFound(config,"port"))
@@ -176,6 +178,15 @@ int main(void) {
                         closesocket(sock);
                         FD_CLR(sock, &master);
                     }
+                }else{
+                    map m = getHandshakeData(buf);
+                    char file[64];
+                    int k = peer_getPeer(peerList1, sock);
+                    sprintf(file,"%s%s.txt",DEFAULT_WWW_FOLDER,peerList1.array[k].peerData.id);
+                    FILE *fp;
+                    fp = fopen(file,"a");
+                    fprintf(fp,"%s\n",map_getValue(m,"message"));
+                    fclose(fp);
                 }
             }
         }
