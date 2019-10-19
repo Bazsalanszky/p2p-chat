@@ -175,7 +175,7 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
                          "Content-Language: en\r\n"
                          "Content-Type: text/html\r\n\r\n"
         );
-        strcat(response,getPeerPage(wio.folder,list.array[peer_getIDPeer(list,file)]));
+        strcat(response,getPeerPage(wio.folder,peer_getPeerByID(list,file) ) );
     } else{
         strcat(path, file);
 
@@ -232,7 +232,7 @@ int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
     sprintf(response, "HTTP/1.1 304 Not Modified "
 
     );
-    //strcat(response,getPeerPage(wio.folder,));
+
 
     int res = send(client,response,strlen(response),0);
     if(res == SOCKET_ERROR ) {
@@ -241,6 +241,12 @@ int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
     }
     shutdown(client,SD_SEND);
     if(map_isFound(post,"id") && map_isFound(post,"message")){
+        char file[64];
+        sprintf(file,"%s%s.txt",wio.folder,map_getValue(post,"id"));
+        FILE * f;
+        f = fopen(file,"a");
+        fprintf(f,"Me: %s\n",map_getValue(post,"message"));
+        fclose(f);
         char buf[DEFAULT_BUFLEN];
         sprintf(buf,"@message=%s",map_getValue(post,"message"));
         res = send(list.array[peer_getIDPeer(list,map_getValue(post,"id"))].socket,buf,DEFAULT_BUFLEN,0);
@@ -313,6 +319,55 @@ char *getPeerPage(char *folder, Peer p) {
     char * header = webio_getHeader(folder);
     sprintf(content,"%s\n"
                     "<h1>%s</h1>\n"
-                    "<div style=\"width: 75%%;margin: auto auto;bottom:0;position: fixed\"><form method=\"POST\"><textarea class=\"form-control\" name=\"message\"rows=\"4\" cols=\"50\"></textarea><input name=\"id\" type=\"text\" value=\"%s\" style=\"display:none\"/><input name=\"s\" type=\"submit\"/></form>",header,p.peerData.id,p.peerData.id);
+                    "<div id=\"msgs\"></div>\n"
+                    "    <form method=\"POST\"class=\"form-inline\" style=\"margin: 7px;padding: 7px;position: fixed;bottom: 0;width: 100%%;\">"
+                    "<textarea name=\"message\" class=\"form-control\" style=\"width: 90%%;display: block;\"></textarea>"
+                    "<input name=\"id\"class=\"form-control\" type=\"text\" style=\"display:none;\" value=\"%s\">"
+                    "<input name=\"s\" id=\"s\" type=\"submit\" class=\"btn btn-primary\" style=\"margin: 7px;padding: 7px;display:inline;\" value=\"Send\" /></form>\n"
+                    "    <script\n"
+                    "        src=\"assets/js/jquery.min.js\"></script>\n"
+                    "        <script src=\"assets/bootstrap/js/bootstrap.min.js\"></script>\n"
+                    "<script>\n"
+                    "String.prototype.replaceAll = function(search, replacement) {\n"
+                    "    var target = this;\n"
+                    "    return target.split(search).join(replacement);\n"
+                    "};\n"
+                    "var submit = document.getElementById('s');\n"
+                    "submit.onclick = function() {\n"
+                    "   window.location.reload(1);\n"
+                    "}\n"
+                    "var xmlhttp = new XMLHttpRequest();\n"
+                    "var url =window.location.href + \".txt\";\n"
+                    "\n"
+                    "xmlhttp.onreadystatechange = function() {\n"
+                    "    if (this.readyState == 4 && this.status == 200) {\n"
+                    "        var myArr = this.responseText.split(\"\\n\");\n"
+                    "        myFunction(myArr);\n"
+                    "    }\n"
+                    "};\n"
+                    "xmlhttp.open(\"GET\", url, true);\n"
+                    "xmlhttp.send();\n"
+                    "\n"
+                    "function myFunction(arr) {\n"
+                    "    var out = \"\";\n"
+                    "    var i;\n"
+                    "    for(i = 0; i < arr.length; i++) {\n"
+                    "      if(arr[i].indexOf(\"Me:\") == -1){"
+                    "         out += '<div class=\"card-body\">"
+                    "            <h6 class=\"text-muted card-subtitle mb-2\">%s<br></h6>"
+                    "            <p class=\"card-text\">' +   decodeURIComponent(arr[i].replace(\"Me\",'').replaceAll('+',' ')) + '</p>"
+                    "        </div>';\n"
+                    "       }else{ out += '<div class=\"card-body\">"
+                    "            <h6 class=\"text-muted card-subtitle mb-2\" style=\"text-align:right;\">You<br></h6>"
+                    "            <p class=\"card-text\" style=\"text-align:right;\">' + decodeURIComponent(arr[i].replaceAll('+',' ')) + '</p>"
+                    "        </div>';\n}\n"
+                    "    }\n"
+                    "    document.getElementById(\"msgs\").innerHTML = out;\n"
+                    "$(\"#msgs\").scrollTop($(\"#msgs\")[0].scrollHeight);"
+                    "}\n"
+                    "</script>"
+                    "</body>\n"
+                    "\n"
+                    "</html>",header,p.peerData.id,p.peerData.id,p.peerData.id);
     return content;
 }

@@ -262,7 +262,7 @@ int peer_getIDPeer(struct peerList list, char* c) {
     return  -1;
 }
 
-Peer peer_getPeer_data(struct peerList list, char *c) {
+Peer peer_getPeerByID(struct peerList list, char *c) {
     Peer res;
     for (int i = 0; i < list.length; ++i) {
         if(strcmp(list.array[i].peerData.id,c) == 0)

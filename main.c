@@ -183,6 +183,7 @@ int main(void) {
                     char file[64];
                     int k = peer_getPeer(peerList1, sock);
                     sprintf(file,"%s%s.txt",DEFAULT_WWW_FOLDER,peerList1.array[k].peerData.id);
+                    logger_log("Message received from %s",peerList1.array[k].peerData.id);
                     FILE *fp;
                     fp = fopen(file,"a");
                     fprintf(fp,"%s\n",map_getValue(m,"message"));
