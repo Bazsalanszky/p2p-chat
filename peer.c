@@ -48,6 +48,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         return -1;
     }
     int len;
+    printf("%s\n",buf);
     map m = getHandshakeData(buf);
     node_data node;
     strcpy(node.ip,ip);
@@ -125,7 +126,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         closesocket(sock);
         return -1;
     }
-    printf("%s\n",buf);
+
 
     int len;
     map m = getHandshakeData(buf);

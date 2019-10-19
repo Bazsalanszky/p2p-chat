@@ -154,7 +154,8 @@ int main(void) {
     free(command);
 
     logger_log("Starting main loop...");
-    while (1) {
+    bool run = true;
+    while (run) {
         fd_set copy = master;
         int count = select(0, &copy, NULL, NULL, NULL);
 
@@ -164,7 +165,10 @@ int main(void) {
                 if(peer_HandleConnection(listening, &peerList1, mynode,&master) != 0)
                     logger_log("Error while receiving connection...");
             }else if(sock == webIo.socket ){
-                webio_handleRequest(webIo,peerList1);
+                res = webio_handleRequest(webIo,peerList1);
+                if(res == -2){
+                    run = false;
+                }
             } else {
                 char buf[DEFAULT_BUFLEN];
                 ZeroMemory(buf, DEFAULT_BUFLEN);
@@ -179,7 +183,10 @@ int main(void) {
                         FD_CLR(sock, &master);
                     }
                 }else{
+                    if(strlen(buf) ==0)
+                        continue;
                     map m = getHandshakeData(buf);
+                    map_dump(m);
                     char file[64];
                     int k = peer_getPeer(peerList1, sock);
                     sprintf(file,"%s%s.txt",DEFAULT_WWW_FOLDER,peerList1.array[k].peerData.id);
@@ -192,9 +199,9 @@ int main(void) {
             }
         }
     }
-
-    free(&config);
-    free(&peerList1);
+    free(peerList1.array);
+    free(config.pairs);
+    logger_log("Closing socket...");
     closesocket(listening);
     WSACleanup();
     return 0;

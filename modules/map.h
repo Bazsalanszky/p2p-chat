@@ -32,7 +32,5 @@ void map_addPair(map *m, pair p);
 
 pair map_make_pair(char *key,char *value);
 
-
-
 //Debug-hoz hasznos
 void map_dump(map m);

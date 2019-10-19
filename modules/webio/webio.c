@@ -12,7 +12,8 @@
 
 
 int webio_create(int port,char* folder,struct Node_data myData,WebIO *webIo){
-    struct addrinfo hint = {};
+    struct addrinfo hint;
+    ZeroMemory(&hint, sizeof(hint));
     struct addrinfo *result = NULL;
     WebIO wio;
     memset(&hint, 0, sizeof(struct addrinfo));
@@ -86,6 +87,7 @@ int webio_create(int port,char* folder,struct Node_data myData,WebIO *webIo){
 int webio_handleRequest(WebIO wio,peerList list){
     SOCKET client = accept(wio.socket,NULL,NULL);
     char buf[8192];
+    ZeroMemory(buf,8192);
     int res = recv(client,buf,8192,0);
     if(res <=0){
         logger_log("Error with web interface!");
@@ -112,6 +114,7 @@ int webio_handleRequest(WebIO wio,peerList list){
         res = webio_handlePOSTrequest(client, wio,list,post);
     }else
         res = -1;
+
     return res;
 
 }
@@ -162,33 +165,34 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
     if (file[0] == '/')
         memmove(file, file+1, strlen(file));
     if(strlen(file) == 0) {
-        strcat(response, "HTTP/1.1 200 OK "
-                         "Content-Encoding: gzip\r\n"
-                         "Content-Language: en\r\n"
-                         "Content-Type: text/html\r\n\r\n"
-        );
-        strcat(response,getIndex(wio.folder,list));
+        char index[8192];
+        getIndex(wio.folder, list, index);
+        sprintf(response, "HTTP/1.1 200 OK "
+                          "Content-Encoding: gzip\r\n"
+                          "Content-Language: en\r\n"
+                          "Content-Type: text/html\r\n\r\n%s",index);
 
     }else if(peer_isFoundInList(list,file)){
-        strcat(response, "HTTP/1.1 200 OK "
-                         "Content-Encoding: gzip\r\n"
-                         "Content-Language: en\r\n"
-                         "Content-Type: text/html\r\n\r\n"
-        );
-        strcat(response,getPeerPage(wio.folder,peer_getPeerByID(list,file) ) );
+        sprintf(response, "HTTP/1.1 200 OK "
+                          "Content-Encoding: gzip\r\n"
+                          "Content-Language: en\r\n"
+                          "Content-Type: text/html\r\n\r\n%s"
+                ,getPeerPage(wio.folder,peer_getPeerByID(list,file) ) );
+    }else if(strcmp(file,"kill") == 0){
+        logger_log("Exit sign received.Exiting...");
+        return -2;
     } else{
         strcat(path, file);
-
+        printf("%s\n",file);
         FILE *fp;
         fp = fopen(path, "r");
 
         if (fp != NULL) {
-            char *content = (char *) malloc(sizeof(char) * 16384);
-            ZeroMemory(content, 16384);
+            char *content = (char *) calloc(sizeof(char) * 16384, sizeof(char));
+
             char buf[4096];
             int counter = 0;
-            //Ez így működik, de nagyon lassú.
-            //TODO: Ki kéne ezt javítani
+
             while (fgets(buf, 4096, fp) != NULL) {
                 int len = strlen(content);
                 strcat(content, buf);
@@ -197,24 +201,25 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
                     content = realloc(content, counter + 16384);
                 }
             }
+
             fclose(fp);
-            response = (char *) malloc(sizeof(char) * counter + 1024);
-            ZeroMemory(response, counter);
-            strcat(response, "HTTP/1.1 200 OK "
-                             "Content-Encoding: gzip\r\n"
-                             "Content-Language: en\r\n"
-                             "Content-Type: "
-            );
-            strcat(response,webio_getMIMEtype(file));
-            strcat(response,"\r\n\r\n");
-            strcat(response, content);
+            int len = counter + 1024;
+            response = (char *) realloc(response,sizeof(char) * len);
+
+            sprintf(response, "HTTP/1.1 200 OK "
+                              "Content-Encoding: gzip\r\n"
+                              "Content-Language: en\r\n"
+                              "Content-Type: %s\r\n\r\n%s"
+                    ,webio_getMIMEtype(file), content);
+
+            free(content);
         } else {
 
-            strcat(response, "HTTP/1.1 404 Not Found "
-                             "Content-Encoding: gzip\r\n"
-                             "Content-Language: en\r\n"
-                             "Content-Type: text/html\r\n\r\n"
-                             "<h1>Error 404 File not found!</h1>");
+            sprintf(response, "HTTP/1.1 404 Not Found "
+                              "Content-Encoding: gzip\r\n"
+                              "Content-Language: en\r\n"
+                              "Content-Type: text/html\r\n\r\n"
+                              "<h1>Error 404 File not found!</h1>");
         }
     }
     int res = send(client,response,strlen(response),0);
@@ -222,8 +227,10 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
         logger_log("Sending failed!");
         return -1;
     }
-    shutdown(client,SD_SEND);
+    shutdown(client,SD_BOTH);
     closesocket(client);
+
+    free(response);
 }
 
 int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
@@ -233,14 +240,13 @@ int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
 
     );
 
-
     int res = send(client,response,strlen(response),0);
     if(res == SOCKET_ERROR ) {
         logger_log("Error with io");
         return -1;
     }
     shutdown(client,SD_SEND);
-    if(map_isFound(post,"id") && map_isFound(post,"message")){
+    if(map_isFound(post,"id") && map_isFound(post,"message") && strcmp(map_getValue(post,"message"),"%0D%0A") != 0){
         char file[64];
         sprintf(file,"%s%s.txt",wio.folder,map_getValue(post,"id"));
         FILE * f;
@@ -256,34 +262,35 @@ int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
         }
         logger_log("Message sent to %s",map_getValue(post,"id"));
     }else map_dump(post);
-
+    //free(response);
 }
-char* webio_getHeader(char* folder) {
-    FILE *fp;
-    char *path = (char*) calloc(65,1);
-    strcat(path, folder);
-    strcat(path, "/header.html");
+void webio_getHeader(char* folder,char**result) {
 
+    char path[65];
+    strcpy(path, folder);
+    strcat(path, "/header.html");
+    printf(path);
+
+    FILE* fp;
     fp = fopen(path, "r");
 
-
     if (fp != NULL) {
-        char *content = (char *) calloc(sizeof(char) * 8192,1);
+        *result = (char *) calloc(sizeof(char) * 8192,1);
         char buf[1024];
         while (fgets(buf, 1024, fp) != NULL) {
-            strcat(content, buf);
-           // printf("%s",buf);
+            strcat(*result, buf);
         }
         fclose(fp);
-        return content;
-    }else return "<html>";
+    }else
+        *result = "<html>";
 }
 
-char* getIndex(char* folder,peerList list){
-    char* content = (char*) calloc(sizeof(char*)*8192,1);
-    char * header = webio_getHeader(folder);
-
-    strcat(content,header);
+void getIndex(char* folder,peerList list,char outputBuffer[]){
+    char content[8192];
+    char* header;
+    webio_getHeader(folder, &header);
+    strcpy(content,header);
+    free(header);
     strcat(content,"<h1>Peers:</h1>\n");
     if(list.length > 0) {
         strcat(content, "<ul>\n");
@@ -311,63 +318,26 @@ char* getIndex(char* folder,peerList list){
     strcat(content,"</div>\n");
     strcat(content,"</body>\n");
     strcat(content,"</html>\n");
-    return content;
+    strcpy(outputBuffer,content);
 }
 
 char *getPeerPage(char *folder, Peer p) {
     char* content = (char*) calloc(sizeof(char*)*8192,1);
-    char * header = webio_getHeader(folder);
+    char* header;
+    webio_getHeader(folder, &header);
+
     sprintf(content,"%s\n"
                     "<h1>%s</h1>\n"
-                    "<div id=\"msgs\"></div>\n"
-                    "    <form method=\"POST\"class=\"form-inline\" style=\"margin: 7px;padding: 7px;position: fixed;bottom: 0;width: 100%%;\">"
-                    "<textarea name=\"message\" class=\"form-control\" style=\"width: 90%%;display: block;\"></textarea>"
+                    "<div id=\"msgs\" style=\"margin-bottom:5em\"></div>\n"
+                    "<div id=\"end\"></div>\n"
+                    "    <form name=\"sendmsg\" class=\"form-inline\" style=\"margin: 7px;padding: 7px;position: fixed;bottom: 0;width: 100%%;\">"
+                    "<textarea name=\"message\" id=\"message\" class=\"form-control\" style=\"width: 90%%;display: block;\"></textarea>"
                     "<input name=\"id\"class=\"form-control\" type=\"text\" style=\"display:none;\" value=\"%s\">"
-                    "<input name=\"s\" id=\"s\" type=\"submit\" class=\"btn btn-primary\" style=\"margin: 7px;padding: 7px;display:inline;\" value=\"Send\" /></form>\n"
-                    "    <script\n"
-                    "        src=\"assets/js/jquery.min.js\"></script>\n"
-                    "        <script src=\"assets/bootstrap/js/bootstrap.min.js\"></script>\n"
-                    "<script>\n"
-                    "String.prototype.replaceAll = function(search, replacement) {\n"
-                    "    var target = this;\n"
-                    "    return target.split(search).join(replacement);\n"
-                    "};\n"
-                    "var submit = document.getElementById('s');\n"
-                    "submit.onclick = function() {\n"
-                    "   window.location.reload(1);\n"
-                    "}\n"
-                    "var xmlhttp = new XMLHttpRequest();\n"
-                    "var url =window.location.href + \".txt\";\n"
-                    "\n"
-                    "xmlhttp.onreadystatechange = function() {\n"
-                    "    if (this.readyState == 4 && this.status == 200) {\n"
-                    "        var myArr = this.responseText.split(\"\\n\");\n"
-                    "        myFunction(myArr);\n"
-                    "    }\n"
-                    "};\n"
-                    "xmlhttp.open(\"GET\", url, true);\n"
-                    "xmlhttp.send();\n"
-                    "\n"
-                    "function myFunction(arr) {\n"
-                    "    var out = \"\";\n"
-                    "    var i;\n"
-                    "    for(i = 0; i < arr.length; i++) {\n"
-                    "      if(arr[i].indexOf(\"Me:\") == -1){"
-                    "         out += '<div class=\"card-body\">"
-                    "            <h6 class=\"text-muted card-subtitle mb-2\">%s<br></h6>"
-                    "            <p class=\"card-text\">' +   decodeURIComponent(arr[i].replace(\"Me\",'').replaceAll('+',' ')) + '</p>"
-                    "        </div>';\n"
-                    "       }else{ out += '<div class=\"card-body\">"
-                    "            <h6 class=\"text-muted card-subtitle mb-2\" style=\"text-align:right;\">You<br></h6>"
-                    "            <p class=\"card-text\" style=\"text-align:right;\">' + decodeURIComponent(arr[i].replaceAll('+',' ')) + '</p>"
-                    "        </div>';\n}\n"
-                    "    }\n"
-                    "    document.getElementById(\"msgs\").innerHTML = out;\n"
-                    "$(\"#msgs\").scrollTop($(\"#msgs\")[0].scrollHeight);"
-                    "}\n"
-                    "</script>"
+                    "<input onclick=\"submitForm();\"name=\"s\" id=\"s\" type=\"button\" class=\"btn btn-primary\" style=\"margin: 7px;padding: 7px;display:inline;\" value=\"Send\" /></form>\n"
+                    "<script src=\"assets/js/chat.js\"></script>"
                     "</body>\n"
                     "\n"
                     "</html>",header,p.peerData.id,p.peerData.id,p.peerData.id);
+    free(header);
     return content;
 }

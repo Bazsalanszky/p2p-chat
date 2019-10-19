@@ -26,7 +26,8 @@ char* webio_getMIMEtype(char* filename);
 
 char* webio_getFiletype(char* filename);
 
-char* webio_getHeader(char* folder);
+void webio_getHeader(char* folder, char** result);
 
-char* getIndex(char* folder,peerList list);
+void getIndex(char* folder, peerList list, char outputBuffer[]);
+
 char* getPeerPage(char* folder,Peer p);
