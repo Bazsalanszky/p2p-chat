@@ -21,7 +21,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
     }
     logger_log("Connected to peer!Sending handshake...");
     char handshake[DEFAULT_BUFLEN];
-    sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
+    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,my.pubkey);
 
     if(strlen(my.nick) != 0) {
         char buf[DEFAULT_BUFLEN];
@@ -68,6 +68,14 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         logger_log("Error: Invalid response!ID not found in handshake.");
         return -1;
     }
+
+    if(map_isFound(m,"pubkey")) {
+        strcpy(node.pubkey, map_getValue(m,  "pubkey"));
+    } else {
+        logger_log("Error: Invalid response!RSA public key not found in handshake.");
+        return -1;
+    }
+
     if(map_isFound(m,"port")) {
         node.port = atoi(map_getValue(m,  "port"));
     } else {
@@ -78,7 +86,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
     if(map_isFound(m,"nickname")) {
         strcpy(node.nick, map_getValue(m,  "nickname"));
     }
-
+    map_dump(m);
     Peer p;
     p.peerData = node;
     p.socket = sock;
@@ -139,6 +147,13 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         logger_log("Error: Invalid response!ID not found in handshake.");
         return -1;
     }
+    if(map_isFound(m,"pubkey")) {
+        strcpy(node.pubkey, map_getValue(m,  "pubkey"));
+    } else {
+        logger_log("Error: Invalid response!RSA public key not found in handshake.");
+        return -1;
+    }
+
     if(map_isFound(m,"port")) {
         node.port = atoi(map_getValue(m,  "port"));
     } else {
@@ -161,9 +176,11 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         closesocket(sock);
         return -1;
     }
+    map_dump(m);
     logger_log("Handshake recived! Sending response!");
     char* handshake = (char*) calloc(DEFAULT_BUFLEN, sizeof(char));
-    sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
+    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,my.pubkey);
+
     if(strlen(my.nick) != 0) {
         ZeroMemory(buf,DEFAULT_BUFLEN);
         sprintf(buf, "&nickname=%s",my.nick);

@@ -9,6 +9,7 @@
 typedef struct Node_data {
     char ip[NI_MAXHOST];
     char id[33];
+    char pubkey[256+1];
     char nick[30];
     int port;
 } node_data;

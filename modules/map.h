@@ -12,7 +12,7 @@
 
 typedef struct Pair{
     char key[65];
-    char value[65];
+    char value[513];
 }pair;
 
 typedef struct Map

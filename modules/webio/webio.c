@@ -183,7 +183,6 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,peerList list){
         return -2;
     } else{
         strcat(path, file);
-        printf("%s\n",file);
         FILE *fp;
         fp = fopen(path, "r");
 
@@ -269,7 +268,6 @@ void webio_getHeader(char* folder,char**result) {
     char path[65];
     strcpy(path, folder);
     strcat(path, "/header.html");
-    printf(path);
 
     FILE* fp;
     fp = fopen(path, "r");

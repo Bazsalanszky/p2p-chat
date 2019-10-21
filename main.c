@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "peer.h"
 
+#include "peer.h"
+#include "modules/crypto.h"
 #include "modules/webio/webio.h"
 #include "modules/config.h"
 
 #pragma comment(lib, "ws2_32.lib")
-//#include "webinterface.h"
 
 #ifdef RANDOM_PORT
 #define DEFAULT_PORT "0"
@@ -20,27 +20,29 @@
 int main(void) {
     map config = config_load();
 
-    FILE *seed_file;
-    seed_file = fopen("seed.txt", "r");
-    char seed[513];
-    if (seed_file == NULL) {
-        logger_log("Seed not found! Generating a new one...");
-        strcpy(seed, generateSeed(512));
-        seed_file = fopen("seed.txt", "w");
-        fprintf(seed_file, "%s", seed);
+    RSA* r = createRSAfromFile("private.pem",0);
+    if(r == NULL){
+        logger_log("RSA key not found! Generating a new one...");
+        r = generate_key();
 
-    } else {
-        fgets(seed, 512, seed_file);
     }
-    fclose(seed_file);
+    FILE *pubkey;
+    pubkey = fopen("public.pem", "r");
+    char pub[257];
+    char buf[257];
     char id[MD5_DIGEST_LENGTH];
-    md5(seed, id);
-
+    ZeroMemory(pub,257);
+    while(fgets(buf,256,pubkey)!= NULL){
+        if(buf[0] == '-') continue;
+        strcat(pub,buf);
+    }
+    md5(pub,id);
     node_data mynode;
     strcpy(mynode.id, id);
-
-    if(map_isFound(config,"nickname"))
-        strcpy(mynode.nick,map_getValue(config,"nickname"));
+    strcpy(mynode.pubkey, pub);
+    if(map_isFound(config,"nickname")) {
+        strcpy(mynode.nick, map_getValue(config, "nickname"));
+    }
     if(map_isFound(config,"port"))
         mynode.port = atoi(map_getValue(config,"port"));
     else
@@ -52,7 +54,6 @@ int main(void) {
         logger_log("Error at startup! Error code: %d", WSAGetLastError());
         WSACleanup();
     }
-
     struct addrinfo hint = {};
     struct addrinfo *result = NULL;
 
@@ -150,7 +151,7 @@ int main(void) {
 
     char *command =(char*) malloc(64);
     sprintf(command,"start http://127.0.0.1:%d",ntohs(webIo.sockaddr.sin_port));
-    system(command);
+   // system(command);
     free(command);
 
     logger_log("Starting main loop...");
