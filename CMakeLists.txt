@@ -10,7 +10,7 @@ add_executable(p2p-3 main.c peer.h peer.c utility.c utility.h modules/webio/webi
 set_target_properties( p2p-2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-2 )
 set_target_properties( p2p-3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-3 )
 # Függvények kipróbálására hoztam létre
-add_executable(test test.c utility.h utility.c modules/map.h modules/map.c)
+add_executable(test test.c utility.h utility.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
 
 target_compile_definitions(p2p-2 PUBLIC RANDOM_PORT)
 target_compile_definitions(p2p-3 PUBLIC RANDOM_PORT)

@@ -37,7 +37,7 @@ map getHandshakeData(char* text){
     while (tmp != NULL && i <count+1)
     {
         char key[65];
-        char value[65];
+        char value[1024];
         sscanf(tmp,"%[^=]=%s",key,value);
         map_addPair(&result,map_make_pair(key,value));
         ++i;

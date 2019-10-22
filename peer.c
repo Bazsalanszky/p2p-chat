@@ -20,9 +20,10 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         return -1;
     }
     logger_log("Connected to peer!Sending handshake...");
-    char handshake[DEFAULT_BUFLEN];
-    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,my.pubkey);
-
+    char handshake[DEFAULT_BUFLEN],*base64Key;
+    base64Encode((unsigned char*)my.pubkey_str,strlen(my.pubkey_str),&base64Key);
+    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,base64Key);
+    logger_log("%s",handshake);
     if(strlen(my.nick) != 0) {
         char buf[DEFAULT_BUFLEN];
         ZeroMemory(buf,DEFAULT_BUFLEN);
@@ -70,7 +71,12 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
     }
 
     if(map_isFound(m,"pubkey")) {
-        strcpy(node.pubkey, map_getValue(m,  "pubkey"));
+        unsigned char* pubkey;
+        char* base64Key = map_getValue(m,  "pubkey");
+        size_t len;
+        base64Decode(base64Key,&pubkey,&len);
+        strcpy(node.pubkey_str,(const char*)pubkey);
+        node.pubkey = createRSA(pubkey,1);
     } else {
         logger_log("Error: Invalid response!RSA public key not found in handshake.");
         return -1;
@@ -138,7 +144,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
 
     int len;
     map m = getHandshakeData(buf);
-
+    map_dump(m);
     node_data node;
     strcpy(node.ip,ip);
     if(map_isFound(m,"id")) {
@@ -148,7 +154,12 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         return -1;
     }
     if(map_isFound(m,"pubkey")) {
-        strcpy(node.pubkey, map_getValue(m,  "pubkey"));
+        unsigned char* pubkey;
+        char* base64Key = map_getValue(m,  "pubkey");
+        size_t len;
+        base64Decode(base64Key,&pubkey,&len);
+        strcpy(node.pubkey_str,(const char*)pubkey);
+        node.pubkey = createRSA(pubkey,1);
     } else {
         logger_log("Error: Invalid response!RSA public key not found in handshake.");
         return -1;
@@ -176,10 +187,10 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         closesocket(sock);
         return -1;
     }
-    map_dump(m);
     logger_log("Handshake recived! Sending response!");
-    char* handshake = (char*) calloc(DEFAULT_BUFLEN, sizeof(char));
-    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,my.pubkey);
+    char handshake[DEFAULT_BUFLEN],*base64Key;
+    base64Encode((unsigned char*)my.pubkey_str,strlen(my.pubkey_str),&base64Key);
+    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,base64Key);
 
     if(strlen(my.nick) != 0) {
         ZeroMemory(buf,DEFAULT_BUFLEN);

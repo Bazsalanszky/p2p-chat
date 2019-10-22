@@ -245,6 +245,7 @@ int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post){
         return -1;
     }
     shutdown(client,SD_SEND);
+
     if(map_isFound(post,"id") && map_isFound(post,"message") && strcmp(map_getValue(post,"message"),"%0D%0A") != 0){
         char file[64];
         sprintf(file,"%s%s.txt",wio.folder,map_getValue(post,"id"));

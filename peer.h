@@ -3,13 +3,15 @@
 //
 #pragma once
 #include "utility.h"
+#include "modules/crypto.h"
 
 #define DEFAULT_MAX_PEER_COUNT 64
 
 typedef struct Node_data {
     char ip[NI_MAXHOST];
     char id[33];
-    char pubkey[256+1];
+    char pubkey_str[513];
+    RSA * pubkey;
     char nick[30];
     int port;
 } node_data;

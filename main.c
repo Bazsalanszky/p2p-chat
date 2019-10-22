@@ -26,20 +26,24 @@ int main(void) {
         r = generate_key();
 
     }
+
     FILE *pubkey;
     pubkey = fopen("public.pem", "r");
-    char pub[257];
-    char buf[257];
+    char pub[513];
+    char buf[513];
     char id[MD5_DIGEST_LENGTH];
-    ZeroMemory(pub,257);
-    while(fgets(buf,256,pubkey)!= NULL){
-        if(buf[0] == '-') continue;
+    ZeroMemory(pub,513);
+    while(fgets(buf,513,pubkey)!= NULL){
         strcat(pub,buf);
     }
     md5(pub,id);
     node_data mynode;
     strcpy(mynode.id, id);
-    strcpy(mynode.pubkey, pub);
+    strcpy(mynode.pubkey_str, pub);
+    char *base64Key;
+    base64Encode((unsigned char*)pub,strlen(pub),&base64Key);
+
+    mynode.pubkey = createRSA((unsigned char*)mynode.pubkey_str,1);
     if(map_isFound(config,"nickname")) {
         strcpy(mynode.nick, map_getValue(config, "nickname"));
     }
@@ -151,7 +155,7 @@ int main(void) {
 
     char *command =(char*) malloc(64);
     sprintf(command,"start http://127.0.0.1:%d",ntohs(webIo.sockaddr.sin_port));
-   // system(command);
+    system(command);
     free(command);
 
     logger_log("Starting main loop...");
