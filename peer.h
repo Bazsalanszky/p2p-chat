@@ -1,5 +1,6 @@
 //
-// Created by Balazs Tolid on 2019. 10. 09..
+// Készítette: Toldi Balázs Ádám
+// Dátum: 2019. 10. 09.
 //
 #pragma once
 #include "utility.h"
@@ -11,6 +12,7 @@ typedef struct Node_data {
     char ip[NI_MAXHOST];
     char id[33];
     char pubkey_str[513];
+    char privkey_str[2049]; // Privát RSA kulcs - Egy node csak a sajátját tárolja így
     RSA * pubkey;
     char nick[30];
     int port;

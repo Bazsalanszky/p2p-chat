@@ -112,6 +112,7 @@ int webio_handleRequest(WebIO wio,peerList list){
         map post = getHandshakeData(tmp);
 
         res = webio_handlePOSTrequest(client, wio,list,post);
+        free(post.pairs);
     }else
         res = -1;
 
@@ -125,6 +126,8 @@ char* webio_getMIMEtype(char* filename){
         return "text/html";
     else if (strcmp(ext, "json") == 0)
         return "application/json";
+    else if (strcmp(ext, "svg") == 0)
+        return "image/svg+xml";
     else if (strcmp(ext, "js")== 0)
         return "application/javascript";
     else if (strcmp(ext, "css")== 0)
@@ -294,29 +297,25 @@ void getIndex(char* folder,peerList list,char outputBuffer[]){
     if(list.length > 0) {
         strcat(content, "<ul>\n");
         for (int i = 0; i < list.length; ++i) {
-            strcat(content, "<li>");
-            strcat(content, "<a href=\"");
-            strcat(content, list.array[i].peerData.id);
-            strcat(content, "\">");
+            sprintf(content, "%s<li>"
+                             "<a href=\"%s\">",
+            content, list.array[i].peerData.id);
             if(strlen(list.array[i].peerData.nick) != 0){
-                strcat(content, list.array[i].peerData.nick);
-                strcat(content, " - ");
+                sprintf(content, "%s%s - ",content,list.array[i].peerData.nick);
             }
-            strcat(content, list.array[i].peerData.id);
-            strcat(content, "</a>\n");
-            strcat(content, "</li>\n");
+            sprintf(content,"%s%s</a></li>\n",content, list.array[i].peerData.id);
         }
         strcat(content, "</ul>\n");
     }else
-        strcat(content,"<div class=\"alert alert-warning\" role=\"alert\">\n"
+        sprintf(content,"%s<div class=\"alert alert-warning\" role=\"alert\">\n"
                        "  No peers connected!\n"
-                       "</div>\n");
-    strcat(content,"<script>setTimeout(function(){\n"
+                       "</div>\n",content);
+    sprintf(content,"%s<script>setTimeout(function(){\n"
                    "   window.location.reload(1);\n"
-                   "}, 5000);</script>\n");
-    strcat(content,"</div>\n");
-    strcat(content,"</body>\n");
-    strcat(content,"</html>\n");
+                   "}, 5000);</script>\n"
+                   "</div>\n"
+                   "</body>\n"
+    "</html>\n",content);
     strcpy(outputBuffer,content);
 }
 

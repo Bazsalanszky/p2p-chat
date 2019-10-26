@@ -19,7 +19,7 @@
 
 int main(void) {
     map config = config_load();
-
+    //TODO: Kijavítani ezt
     RSA* r = createRSAfromFile("private.pem",0);
     if(r == NULL){
         logger_log("RSA key not found! Generating a new one...");
@@ -27,19 +27,18 @@ int main(void) {
 
     }
 
-    FILE *pubkey;
-    pubkey = fopen("public.pem", "r");
     char pub[513];
+    char priv[2049];
+    RSA_getPublicKey(r,pub);
+    RSA_getPrivateKey(r,priv);
     char buf[513];
     char id[MD5_DIGEST_LENGTH];
-    ZeroMemory(pub,513);
-    while(fgets(buf,513,pubkey)!= NULL){
-        strcat(pub,buf);
-    }
+
     md5(pub,id);
     node_data mynode;
     strcpy(mynode.id, id);
     strcpy(mynode.pubkey_str, pub);
+    strcpy(mynode.privkey_str, priv);
     char *base64Key;
     base64Encode((unsigned char*)pub,strlen(pub),&base64Key);
 
@@ -52,6 +51,7 @@ int main(void) {
     else
     mynode.port = atoi(DEFAULT_PORT);
     logger_log("Initialising core...");
+    //TODO: Ezt a részt külön függvénybe tenni egy külön file-ban
     WSADATA ws;
     int res = WSAStartup(MAKEWORD(2, 2), &ws);
     if (res != 0) {

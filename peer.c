@@ -1,5 +1,6 @@
 //
-// Created by Balazs on 2019. 10. 11..
+// Készítette: Toldi Balázs Ádám
+// Dátum: 2019. 10. 11.
 //
 #include "peer.h"
 
@@ -44,12 +45,11 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         closesocket(sock);
         return -1;
     }
+
     if(buf[0] != '@'){
         logger_log("Error: Invalid response!");
         return -1;
     }
-    int len;
-    printf("%s\n",buf);
     map m = getHandshakeData(buf);
     node_data node;
     strcpy(node.ip,ip);
@@ -92,7 +92,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
     if(map_isFound(m,"nickname")) {
         strcpy(node.nick, map_getValue(m,  "nickname"));
     }
-    map_dump(m);
+
     Peer p;
     p.peerData = node;
     p.socket = sock;
@@ -111,6 +111,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
             tmp = strtok(NULL,",");
         }
     }
+    free(m.pairs);
     logger_log("Peer validated (%s->%s)!",node.ip,node.id);
     return 0;
 }
@@ -187,6 +188,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         closesocket(sock);
         return -1;
     }
+    free(m.pairs);
     logger_log("Handshake recived! Sending response!");
     char handshake[DEFAULT_BUFLEN],*base64Key;
     base64Encode((unsigned char*)my.pubkey_str,strlen(my.pubkey_str),&base64Key);
@@ -213,6 +215,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         peers[strlen(peers) - 1] = '\0';
         strcat(handshake,peers);
     }
+
     int res = send(sock, handshake, strlen(handshake), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending handshake!Disconnecting...");

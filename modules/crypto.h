@@ -13,6 +13,7 @@
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
+#include <openssl/err.h>
 
 
 
@@ -20,6 +21,7 @@ RSA* createRSA(unsigned char * key,int public);
 RSA* createRSAfromFile(char* filename,int pub);
 RSA* generate_key();
 void RSA_getPublicKey(RSA*r,char* pubkey);
+void RSA_getPrivateKey(RSA*r,char* privkey);
 
 int public_encrypt(unsigned char * data,int data_len,unsigned char * key, unsigned char *encrypted);
 int private_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, unsigned char *decrypted);
@@ -27,5 +29,4 @@ int private_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, u
 int base64Encode(const unsigned char* input ,size_t len, char** outpub);
 size_t calcDecodeLength(const char* b64input);
 int base64Decode(const char* input, unsigned char**buffer,size_t* len);
-void hexEncode(char*input,char* out);
-void hexDecode(char*input,char* out);
+void printLastError(char *msg);

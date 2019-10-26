@@ -65,7 +65,6 @@ RSA *generate_key() {
     int             bits = 2048;
     unsigned long   e = RSA_F4;
 
-    // 1. generate rsa key
     bne = BN_new();
     ret = BN_set_word(bne,e);
     if(ret != 1){
@@ -84,7 +83,6 @@ RSA *generate_key() {
         BN_free(bne);
     }
 
-    // 2. save public key
     bp_public = BIO_new_file("public.pem", "w+");
     ret = PEM_write_bio_RSAPublicKey(bp_public, r);
     if(ret != 1){
@@ -94,7 +92,6 @@ RSA *generate_key() {
         BN_free(bne);
     }
 
-    // 3. save private key
     bp_private = BIO_new_file("private.pem", "w+");
     ret = PEM_write_bio_RSAPrivateKey(bp_private, r, NULL, NULL, 0, NULL, NULL);
     BIO_free_all(bp_public);
@@ -117,6 +114,16 @@ void RSA_getPublicKey(RSA*r,char* pubkey){
     BIO_free_all(bio);
 }
 
+void RSA_getPrivateKey(RSA *r, char *privkey) {
+    int keylen;
+
+    BIO *bio = BIO_new(BIO_s_mem());
+    int res = PEM_write_bio_RSAPrivateKey(bio,r,NULL,NULL,0,NULL,NULL);
+    keylen = BIO_pending(bio);
+
+    int re = BIO_read(bio, privkey, keylen);
+    BIO_free_all(bio);
+}
 int public_encrypt(unsigned char *data, int data_len, unsigned char *key, unsigned char *encrypted) {
     RSA * rsa = createRSA(key,1);
     int result = RSA_public_encrypt(data_len,data,encrypted,rsa,RSA_PKCS1_PADDING);
@@ -180,17 +187,4 @@ int base64Decode(const char* input, unsigned char**buffer,size_t* len) { //Decod
     return (0); //success
 }
 
-void hexEncode(char*input,char* output){
-    size_t len = strlen(input);
-    for(int i = 0; i<len; i++){
-        sprintf(output+i*2, "%02X", input[i]);
-    }
 
-}
-
-void hexDecode(char *input, char *out) {
-    size_t len = strlen(input);
-    for(int i = 0; i<len; i++){
-        sprintf(out+i, "%x", input[i]);
-    }
-}

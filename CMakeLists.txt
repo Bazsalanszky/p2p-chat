@@ -12,6 +12,16 @@ set_target_properties( p2p-3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_
 # Függvények kipróbálására hoztam létre
 add_executable(test test.c utility.h utility.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
 
+add_custom_command(TARGET p2p PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/htdocs/ $<TARGET_FILE_DIR:p2p>/htdocs/)
+add_custom_command(TARGET p2p-2 PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/htdocs/ $<TARGET_FILE_DIR:p2p-2>/htdocs/)
+add_custom_command(TARGET p2p-3 PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/htdocs/ $<TARGET_FILE_DIR:p2p-3>/htdocs/)
+
 target_compile_definitions(p2p-2 PUBLIC RANDOM_PORT)
 target_compile_definitions(p2p-3 PUBLIC RANDOM_PORT)
 
