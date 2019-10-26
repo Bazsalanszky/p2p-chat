@@ -62,19 +62,19 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         return -1;
     }
 
-
-    if(map_isFound(m,"id")) {
-        strcpy(node.id, map_getValue(m,  "id"));
+    char * id = map_getValue(m,  "id");
+    if(id != NULL) {
+        strcpy(node.id, id);
     } else {
         logger_log("Error: Invalid response!ID not found in handshake.");
         return -1;
     }
-
-    if(map_isFound(m,"pubkey")) {
+    char* pbk_str = map_getValue(m,  "pubkey");
+    if(pbk_str != NULL) {
         unsigned char* pubkey;
-        char* base64Key = map_getValue(m,  "pubkey");
+
         size_t len;
-        base64Decode(base64Key,&pubkey,&len);
+        base64Decode(pbk_str,&pubkey,&len);
         strcpy(node.pubkey_str,(const char*)pubkey);
         node.pubkey = createRSA(pubkey,1);
     } else {
@@ -82,15 +82,16 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         return -1;
     }
 
-    if(map_isFound(m,"port")) {
-        node.port = atoi(map_getValue(m,  "port"));
+    char * port_str = map_getValue(m,"port");
+    if(port_str != NULL) {
+        node.port = atoi(port_str);
     } else {
         logger_log("Error: Invalid response!Port not found in handshake.");
         return -1;
     }
-
-    if(map_isFound(m,"nickname")) {
-        strcpy(node.nick, map_getValue(m,  "nickname"));
+    char * nickname = map_getValue(m,"nickname");
+    if(nickname != NULL) {
+        strcpy(node.nick, nickname);
     }
 
     Peer p;
@@ -99,9 +100,10 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
     p.sockaddr = hint;
     FD_SET(sock,fdSet);
     peer_addTolist(peerList,p);
-    //TODO: Connect to recived peers
-    if(map_isFound(m,"peers")) {
-        char* tmp = strtok(map_getValue(m,"peers"),",");
+
+    char* peers =map_getValue(m,"peers");
+    if(peers != NULL) {
+        char* tmp = strtok(peers,",");
         while(tmp != NULL){
             char ip[NI_MAXHOST];
              int port;
@@ -148,15 +150,19 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
     map_dump(m);
     node_data node;
     strcpy(node.ip,ip);
-    if(map_isFound(m,"id")) {
-        strcpy(node.id, map_getValue(m,  "id"));
+
+    char* id = map_getValue(m,  "id");
+    if(id != NULL) {
+        strcpy(node.id, id);
     } else {
         logger_log("Error: Invalid response!ID not found in handshake.");
         return -1;
     }
-    if(map_isFound(m,"pubkey")) {
+    char* base64Key = map_getValue(m,  "pubkey");
+
+    if(base64Key != NULL) {
         unsigned char* pubkey;
-        char* base64Key = map_getValue(m,  "pubkey");
+
         size_t len;
         base64Decode(base64Key,&pubkey,&len);
         strcpy(node.pubkey_str,(const char*)pubkey);
@@ -165,16 +171,16 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         logger_log("Error: Invalid response!RSA public key not found in handshake.");
         return -1;
     }
-
-    if(map_isFound(m,"port")) {
-        node.port = atoi(map_getValue(m,  "port"));
+    char * port = map_getValue(m,  "port");
+    if(port != NULL) {
+        node.port = atoi(port);
     } else {
         logger_log("Error: Invalid response!Port not found in handshake.");
         return -1;
     }
-
+    char * nickname = map_getValue(m,  "nickname");
     if(map_isFound(m,"nickname")) {
-        strcpy(node.nick, map_getValue(m,  "nickname"));
+        strcpy(node.nick, nickname);
     }
     if(peer_isFoundInList(*peerList,node.id)){
         logger_log("Handshake received, but the id sent is taken! Dropping peer...");
@@ -190,7 +196,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
     }
     free(m.pairs);
     logger_log("Handshake recived! Sending response!");
-    char handshake[DEFAULT_BUFLEN],*base64Key;
+    char handshake[DEFAULT_BUFLEN];
     base64Encode((unsigned char*)my.pubkey_str,strlen(my.pubkey_str),&base64Key);
     sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,base64Key);
 

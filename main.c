@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "peer.h"
+#include "modules/peer.h"
 #include "modules/crypto.h"
-#include "modules/webio/webio.h"
+#include "modules/webio.h"
 #include "modules/config.h"
 
 #pragma comment(lib, "ws2_32.lib")
@@ -43,13 +43,18 @@ int main(void) {
     base64Encode((unsigned char*)pub,strlen(pub),&base64Key);
 
     mynode.pubkey = createRSA((unsigned char*)mynode.pubkey_str,1);
-    if(map_isFound(config,"nickname")) {
-        strcpy(mynode.nick, map_getValue(config, "nickname"));
+
+    char * nickname = map_getValue(config,"nickname");
+    if(nickname != NULL) {
+        strcpy(mynode.nick, nickname);
     }
-    if(map_isFound(config,"port"))
-        mynode.port = atoi(map_getValue(config,"port"));
+
+    char * port = map_getValue(config,"port");
+    if(port != NULL)
+        mynode.port = atoi(port);
     else
     mynode.port = atoi(DEFAULT_PORT);
+
     logger_log("Initialising core...");
     //TODO: Ezt a részt külön függvénybe tenni egy külön file-ban
     WSADATA ws;

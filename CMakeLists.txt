@@ -4,9 +4,9 @@ project(p2p C)
 set(CMAKE_C_STANDARD 99)
 set(GCC_COVERAGE_COMPILE_FLAGS "-Werror")
 
-add_executable(p2p main.c peer.h peer.c utility.c utility.h modules/webio/webio.h modules/webio/webio.c modules/config.h modules/config.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
-add_executable(p2p-2 main.c peer.h peer.c utility.c utility.h modules/webio/webio.h modules/webio/webio.c modules/config.h modules/config.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
-add_executable(p2p-3 main.c peer.h peer.c utility.c utility.h modules/webio/webio.h modules/webio/webio.c modules/config.h modules/config.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
+add_executable(p2p main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
+add_executable(p2p-2 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
+add_executable(p2p-3 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c modules/map.h modules/map.c modules/crypto.c modules/crypto.h)
 set_target_properties( p2p-2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-2 )
 set_target_properties( p2p-3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-3 )
 # Függvények kipróbálására hoztam létre

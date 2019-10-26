@@ -3,8 +3,8 @@
 // Dátum: 2019. 10. 09.
 //
 #pragma once
-#include "utility.h"
-#include "modules/crypto.h"
+#include "../utility.h"
+#include "crypto.h"
 
 #define DEFAULT_MAX_PEER_COUNT 64
 

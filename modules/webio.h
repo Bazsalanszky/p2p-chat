@@ -3,8 +3,8 @@
 // Dátum:  2019. 10. 14..
 //
 #pragma  once
-#include "../../utility.h"
-#include "../../peer.h"
+#include "../utility.h"
+#include "peer.h"
 
 
 typedef struct webio{
