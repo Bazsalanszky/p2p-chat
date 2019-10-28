@@ -9,10 +9,11 @@
 
 
 int main(){
-    printf("%d\n",SOMAXCONN);
+    generate_key();
     RSA* r = createRSAfromFile("public.pem",1);
+
     char plainText[1024/8] = "Hello this is Ravi"; //key length : 2048
-    char pubkey[1024];
+    char pubkey[4096];
     RSA_getPublicKey(r,pubkey);
     printf("%s\n",pubkey);
 
