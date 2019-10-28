@@ -14,6 +14,7 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include "../utility.h"
 
 
 
@@ -29,4 +30,4 @@ int private_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, u
 int base64Encode(const unsigned char* input ,size_t len, char** outpub);
 size_t calcDecodeLength(const char* b64input);
 int base64Decode(const char* input, unsigned char**buffer,size_t* len);
-void printLastError(char *msg);
+void printOpenSSLError(char *msg);

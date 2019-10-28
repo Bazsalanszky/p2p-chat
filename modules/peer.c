@@ -24,7 +24,6 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
     char handshake[DEFAULT_BUFLEN],*base64Key;
     base64Encode((unsigned char*)my.pubkey_str,strlen(my.pubkey_str),&base64Key);
     sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,base64Key);
-    logger_log("%s",handshake);
     if(strlen(my.nick) != 0) {
         char buf[DEFAULT_BUFLEN];
         ZeroMemory(buf,DEFAULT_BUFLEN);
@@ -51,6 +50,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         return -1;
     }
     map m = getHandshakeData(buf);
+    map_dump(m);
     node_data node;
     strcpy(node.ip,ip);
 
@@ -278,7 +278,7 @@ void peer_addTolist(peerList *list, struct peer p){
     list->array[list->length++] = p;
 }
 void peer_removeFromList(struct peerList* list, int i){
-
+    closesocket(list->array[i].socket);
     for (int k=i; k < list->length-1; ++k)
         list->array[k] =list->array[k+1];
     list->length--;
