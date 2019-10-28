@@ -11,72 +11,18 @@
 #endif
 
 
-int webio_create(int port,char* folder,struct Node_data myData,WebIO *webIo){
-    struct addrinfo hint;
-    ZeroMemory(&hint, sizeof(hint));
+int webio_create(int port,char* folder,struct Node_data myData,bool wildcard,WebIO *webIo){
+
     struct addrinfo *result = NULL;
+    SOCKET listening;
+    result = tcp_createIPv4Socket(&listening,port,wildcard);
+    if(result == NULL){
+        return 1;
+    }
+    tcp_bindnlisten(listening,result,SOMAXCONN);
     WebIO wio;
-    memset(&hint, 0, sizeof(struct addrinfo));
-    hint.ai_protocol = IPPROTO_TCP;
-    hint.ai_socktype = SOCK_STREAM;
-    hint.ai_family = AF_INET;
-    //TODO: Disable this in local modeó
-    hint.ai_canonname = NULL;
-    hint.ai_addr = NULL;
-    hint.ai_next = NULL;
 
-    //TODO: Use config to determine port
-    int res = getaddrinfo(NULL, DEFAULT_INTERFACE_PORT, &hint, &result);
-    if (res != 0) {
-        char error[129];
-        sprintf(error,"Error creating address information!Error code: %d", WSAGetLastError());
-        logger_log(error);
-        WSACleanup();
-        return -1;
-    }
-
-    //Creating listening socket
-    SOCKET listening = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (listening == INVALID_SOCKET) {
-        char error[129];
-        sprintf(error,"Error creating socket!Error code: %d", WSAGetLastError());
-        logger_log(error);
-        WSACleanup();
-        return -1;
-    }
-
-    //Binding the socket
-    res = bind(listening, result->ai_addr, result->ai_addrlen);
-    if (res == SOCKET_ERROR) {
-        char error[129];
-        sprintf(error,"Error at binding!Error code: %d", WSAGetLastError());
-        logger_log(error);
-        freeaddrinfo(result);
-        WSACleanup();
-        return -1;
-    }
-
-    freeaddrinfo(result);
-
-    //TODO: Set max connection count in config
-    res = listen(listening, SOMAXCONN);
-    if (res == -1) {
-        char error[129];
-        sprintf(error,"Error at starting listening!Error code: %d", WSAGetLastError());
-        logger_log(error);
-        WSACleanup();
-        return -1;
-    }
-    //Ez alapvetően akkor hasznos amikor a port 0-ra van állítva, azaz akkor amikor a rendszer random választ egyet.
-    struct sockaddr_in sin;
-    socklen_t len = sizeof(sin);
-    if (getsockname(listening, (struct sockaddr *) &sin, &len) == -1) {
-        char error[129];
-        sprintf(error,"Error at getsockname!Error code: %d", WSAGetLastError());
-        logger_log(error);
-        return -1;
-    }
-    wio.sockaddr = sin;
+    wio.sockaddr = tcp_getAddr_in(listening);
     wio.socket= listening;
     wio.nodeData = myData;
     strcpy(wio.folder,folder);

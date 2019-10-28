@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #include "modules/peer.h"
 #include "modules/crypto.h"
 #include "modules/webio.h"
 #include "modules/config.h"
+#include "modules/tcp-listener.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -63,66 +65,20 @@ int main(void) {
         logger_log("Error at startup! Error code: %d", WSAGetLastError());
         WSACleanup();
     }
-    struct addrinfo hint = {};
+
     struct addrinfo *result = NULL;
-
-    memset(&hint, 0, sizeof(struct addrinfo));
-    hint.ai_protocol = IPPROTO_TCP;
-    hint.ai_socktype = SOCK_STREAM;
-    hint.ai_family = AF_INET;
-    //TODO: Disable this in local mode
-    hint.ai_flags = AI_PASSIVE;
-    hint.ai_canonname = NULL;
-    hint.ai_addr = NULL;
-    hint.ai_next = NULL;
-
-    //TODO: Use config to determine port
-    char sport[10];
-    sprintf( sport, "%d", mynode.port);
-    res = getaddrinfo(NULL, sport, &hint, &result);
-    if (res != 0) {
-        logger_log("Error creating address information! Error code: %d", WSAGetLastError());
-        WSACleanup();
+    SOCKET listening;
+    result = tcp_createIPv4Socket(&listening,mynode.port,true);
+    if(result == NULL){
         return EXIT_FAILURE;
     }
-
-    //Creating listening socket
-    SOCKET listening = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (listening == INVALID_SOCKET) {
-        logger_log("Error creating socket! Error: %d", WSAGetLastError());
-        WSACleanup();
-        return EXIT_FAILURE;
-    }
-
-    //Binding the socket
-    res = bind(listening, result->ai_addr, result->ai_addrlen);
-    if (res == SOCKET_ERROR) {
-        logger_log("Error binding socket! Error: %d", WSAGetLastError());
-        freeaddrinfo(result);
-        WSACleanup();
-        return EXIT_FAILURE;
-    }
-
-    freeaddrinfo(result);
-
-    //TODO: Set max connection count in config
-    res = listen(listening, SOMAXCONN);
-    if (res == -1) {
-        logger_log("Error starting listening! Error: %d", WSAGetLastError());
-        closesocket(listening);
-        WSACleanup();
+    res = tcp_bindnlisten(listening,result,SOMAXCONN);
+    if(res != 0){
         return EXIT_FAILURE;
     }
     //Ez alapvetően akkor hasznos amikor a port 0-ra van állítva, azaz akkor amikor a rendszer random választ egyet.
-    struct sockaddr_in sin;
-    socklen_t len = sizeof(sin);
-    if (getsockname(listening, (struct sockaddr *) &sin, &len) == -1) {
-        logger_log("Error at getsockname!Error code: %d", WSAGetLastError());
-        closesocket(listening);
-        WSACleanup();
-        return 1;
-    }
-    mynode.port = ntohs(sin.sin_port);
+
+    mynode.port = tcp_getSockPort(listening);
     logger_log("Started listening on port %d", mynode.port);
 
     fd_set master;
@@ -152,14 +108,23 @@ int main(void) {
     }
     fclose(peer_file);
     WebIO webIo;
-    webio_create(atoi(DEFAULT_INTERFACE_PORT),DEFAULT_WWW_FOLDER,mynode,&webIo);
+    port = map_getValue(config,"interface-port");
+    if(port == NULL)
+        port = DEFAULT_INTERFACE_PORT;
+    char* folder = map_getValue(config,"interface-folder");
+    if(folder == NULL)
+        folder = DEFAULT_WWW_FOLDER;
+    res = webio_create(atoi(port),folder,mynode,false,&webIo);
+    if(res != 0){
+        return EXIT_FAILURE;
+    }
     FD_SET(webIo.socket,&master);
 
-    logger_log("Started web interface at http://127.0.0.1:%d",ntohs(webIo.sockaddr.sin_port));
+    logger_log("Started web interface at http://127.0.0.1:%d",tcp_getSockPort(webIo.socket));
 
 
     char *command =(char*) malloc(64);
-    sprintf(command,"start http://127.0.0.1:%d",ntohs(webIo.sockaddr.sin_port));
+    sprintf(command,"start http://127.0.0.1:%d",tcp_getSockPort(webIo.socket));
     system(command);
     free(command);
 

@@ -20,9 +20,9 @@ bool map_isFound(map map, char *key) {
 }
 
 char *map_getValue(map m, char *key) {
-    size_t min = 0;
-    size_t max = m.length-1;
-    size_t kp = (min+max)/2;
+    int min = 0;
+    int max = m.length-1;
+    int kp = (min+max)/2;
     while(min <= max && strcmp(m.pairs[kp].key,key) != 0){
         if(strcmp(m.pairs[kp].key,key) < 0)
             min = kp+1;

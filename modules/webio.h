@@ -4,6 +4,7 @@
 //
 #pragma  once
 #include "../utility.h"
+#include "tcp-listener.h"
 #include "peer.h"
 
 
@@ -14,7 +15,7 @@ typedef struct webio{
     struct Node_data nodeData;
 } WebIO;
 
-int webio_create(int port,char* folder,struct Node_data myData,WebIO *webIo);
+int webio_create(int port,char* folder,struct Node_data myData,bool wildcard,WebIO *webIo);
 
 int webio_handleRequest(WebIO wio,peerList list);
 
