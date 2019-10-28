@@ -246,8 +246,8 @@ void getIndex(char* folder,peerList list,char outputBuffer[]){
             sprintf(content, "%s<li>"
                              "<a href=\"%s\">",
             content, list.array[i].peerData.id);
-            if(strlen(list.array[i].peerData.nick) != 0){
-                sprintf(content, "%s%s - ",content,list.array[i].peerData.nick);
+            if(strcmp(list.array[i].peerData.nick,"") !=0){
+                sprintf(content, "%s%s %d- ",content,list.array[i].peerData.nick,strlen(list.array[i].peerData.nick));
             }
             sprintf(content,"%s%s</a></li>\n",content, list.array[i].peerData.id);
         }

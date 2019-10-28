@@ -38,6 +38,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
     }
     logger_log("Sent!Waiting for response...");
     char buf[DEFAULT_BUFLEN];
+    ZeroMemory(buf,DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
         logger_log("Error: Invalid response!");
@@ -50,7 +51,6 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         return -1;
     }
     map m = getHandshakeData(buf);
-    map_dump(m);
     node_data node;
     strcpy(node.ip,ip);
 
@@ -89,6 +89,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         logger_log("Error: Invalid response!Port not found in handshake.");
         return -1;
     }
+    ZeroMemory(node.nick,30);
     char * nickname = map_getValue(m,"nickname");
     if(nickname != NULL) {
         strcpy(node.nick, nickname);
@@ -133,7 +134,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
     inet_ntop(AF_INET, &client.sin_addr, ip, NI_MAXHOST);
 
     char buf[DEFAULT_BUFLEN];
-
+    ZeroMemory(buf,DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
         closesocket(sock);
@@ -147,7 +148,6 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
 
     int len;
     map m = getHandshakeData(buf);
-    map_dump(m);
     node_data node;
     strcpy(node.ip,ip);
 

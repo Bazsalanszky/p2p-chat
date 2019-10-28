@@ -54,7 +54,7 @@ int main(void) {
     char * nickname = map_getValue(config,"nickname");
     if(nickname != NULL) {
         strcpy(mynode.nick, nickname);
-    }
+    }else strcpy(mynode.nick, "");
 
     char * port = map_getValue(config,"port");
     if(port != NULL)
