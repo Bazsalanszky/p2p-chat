@@ -42,7 +42,33 @@ struct addrinfo* tcp_createIPv4Socket(SOCKET *s,int port,bool wildcard){
 int tcp_bindnlisten(SOCKET s,struct addrinfo* addr,int conn_count){
     int res = bind(s, addr->ai_addr, addr->ai_addrlen);
     if (res == SOCKET_ERROR) {
-        logger_log("Error binding socket! Error: %d", WSAGetLastError());
+        logger_log("Error binding socket!");
+        switch(WSAGetLastError()){
+            case WSAENETDOWN:
+                logger_log("The network subsystem has failed.");
+                break;
+            case WSAEADDRINUSE:
+                logger_log("Port already in use.");
+                break;
+            case WSAEACCES:
+                logger_log("An attempt was made to access a socket in a way forbidden by its access permissions.");
+                break;
+            case WSAEADDRNOTAVAIL:
+                logger_log("The requested address is not valid in its context.");
+                break;
+            case WSAEFAULT:
+                logger_log("The system detected an invalid pointer address in attempting to use a pointer argument in a call.");
+                break;
+            case WSAEINPROGRESS:
+                logger_log("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+                break;
+            case WSAEINVAL:
+                logger_log("This socket is already bound to an address.");
+                break;
+            case WSAENOBUFS:
+                logger_log("Not enough buffers are available or there are too many connections!");
+                break;
+        }
         freeaddrinfo(addr);
         WSACleanup();
         return 1;

@@ -23,7 +23,7 @@ A program ezekben az esetekben ír ki a képernyőre (és mindezt elmenti a `log
 
 ## Konfigurációs fájl
 
-A konfigurációs fájl arra szolgál, hogy a felhasználó igényei szerint beállíthassa,hogy hogyan működjön a program.Ez a fájl a `config.txt`. Itt a különböző értékek soronként `kulcs=érték` formátumban vannak.
+A konfigurációs fájl arra szolgál, hogy a felhasználó igényei szerint beállíthassa,hogy hogyan működjön a program.Ez a fájl a `config.ini`. Itt a különböző értékek soronként `kulcs=érték` formátumban vannak.
 
 Ha egy sor kettős kereszttel(`#`) kezdődik,akkor azt a program kommentnek veszi.
 
