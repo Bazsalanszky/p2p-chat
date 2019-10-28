@@ -21,22 +21,27 @@
 
 int main(void) {
     map config = config_load();
-    //TODO: Kijavítani ezt
+    
     RSA* r = createRSAfromFile("private.pem",0);
     if(r == NULL){
         logger_log("RSA key not found! Generating a new one...");
         r = generate_key();
-
+        if(r == NULL){
+            printOpenSSLError("Error generating RSA key pair!");
+            return 2;
+        }
+        r = createRSAfromFile("private.pem",0);
     }
 
-    char pub[513];
+    char pub[16964];
     char priv[2049];
     RSA_getPublicKey(r,pub);
     RSA_getPrivateKey(r,priv);
+    RSA_free(r);
     char buf[513];
     char id[MD5_DIGEST_LENGTH];
 
-    md5(pub,id);
+    md5(priv,id);
     node_data mynode;
     strcpy(mynode.id, id);
     strcpy(mynode.pubkey_str, pub);
@@ -154,7 +159,6 @@ int main(void) {
                     if (k != -1) {
                         logger_log("Peer disconnected(%s->%s)", inet_ntoa(peerList1.array[k].sockaddr.sin_addr),peerList1.array[k].peerData.id);
                         peer_removeFromList(&peerList1, k);
-                        closesocket(sock);
                         FD_CLR(sock, &master);
                     }
                 }else{

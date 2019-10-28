@@ -39,7 +39,6 @@ RSA *createRSAfromFile(char *file, int pub) {
 
     if(fp == NULL)
     {
-        printf("Unable to open file %s \n",file);
         return NULL;
     }
     RSA *rsa= RSA_new() ;
@@ -72,6 +71,7 @@ RSA *generate_key() {
         BIO_free_all(bp_private);
         RSA_free(r);
         BN_free(bne);
+        return NULL;
     }
 
     r = RSA_new();
@@ -81,15 +81,16 @@ RSA *generate_key() {
         BIO_free_all(bp_private);
         RSA_free(r);
         BN_free(bne);
+        return NULL;
     }
-
     bp_public = BIO_new_file("public.pem", "w+");
-    ret = PEM_write_bio_RSAPublicKey(bp_public, r);
+    ret = PEM_write_bio_RSA_PUBKEY(bp_public, r);
     if(ret != 1){
         BIO_free_all(bp_public);
         BIO_free_all(bp_private);
         RSA_free(r);
         BN_free(bne);
+        return  NULL;
     }
 
     bp_private = BIO_new_file("private.pem", "w+");
@@ -185,6 +186,14 @@ int base64Decode(const char* input, unsigned char**buffer,size_t* len) { //Decod
     BIO_free_all(bio);
 
     return (0); //success
+}
+
+void printOpenSSLError(char *msg) {
+    char * err = malloc(130);;
+    ERR_load_crypto_strings();
+    ERR_error_string(ERR_get_error(), err);
+    logger_log("%s ERROR: %s\n",msg, err);
+    free(err);
 }
 
 
