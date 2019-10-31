@@ -12,11 +12,8 @@ void map_init(map *m) {
 }
 
 bool map_isFound(map map, char *key) {
-    for (int i = 0; i < map.length; ++i) {
-        if (strcmp(map.pairs[i].key, key) == 0)
-            return true;
-    }
-    return false;
+    char* res = map_getValue(map,key);
+    return (res == NULL) ? false : true;
 }
 
 char *map_getValue(map m, char *key) {
