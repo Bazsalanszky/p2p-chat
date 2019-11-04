@@ -19,12 +19,28 @@
  */
 struct addrinfo* tcp_createIPv4Socket(SOCKET *socket,int port,bool wildcard);
 /*!
- * @brief
- * @param s
- * @param addr
- * @param conn_count
- * @return
+ * @brief Egy socketet hozzárendel egy socket-címstruktúrához, azaz egy adott helyi portszámhoz és IP-címhez,valamint hallgató állapotba helyezi.
+ * @param[in,out] socket A socket amin a műveletet végre akarjuk hajtani
+ * @param[in] addr egy socket-címstruktúra
+ * @param[in] conn_count A maximum kapcsolatok száma (<a href="https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-listen#parameters">SOMAXCONN</a>)
+ * @return A művelet sikerességét jelző szám kód
+ * <table>
+ * <tr><th>Kód</th><th>Jelentése</th></tr>
+ * <tr><td>0</td><td>A művelet sikeres volt</td></tr>
+ * <tr><td>1</td><td>A bind() függvény futása közben hiba lépett fel</td></tr>
+ * <tr><td>2</td><td>A listen() függvény futása közben hiba lépett fel</td></tr>
+ * </table>
  */
-int tcp_bindnlisten(SOCKET s,struct addrinfo* addr,int conn_count);
-struct sockaddr_in tcp_getAddr_in(SOCKET s);
-int tcp_getSockPort(SOCKET s);
+int tcp_bindnlisten(SOCKET socket,struct addrinfo* addr,int conn_count);
+/*!
+ * @brief Kér egy szoketet és vissza adja a hozzá tartozó socket-címstruktúrát
+ * @param[in] socket A socket, aminek a címstruktúráját keressük
+ * @return A socket-címstruktúrája
+ */
+struct sockaddr_in tcp_getAddr_in(SOCKET socket);
+/*!
+ * @brief Visszaadja egy listening socket portszámát
+ * @param[in] socket
+ * @return A socket portszáma
+ */
+int tcp_getSockPort(SOCKET socket);
