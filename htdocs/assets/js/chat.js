@@ -15,7 +15,7 @@ function encodeQueryData(data) {
 function submitForm() {
 	var formElement = document.forms.namedItem("sendmsg")
     var formData = new FormData(formElement);
-	if(formData.get("message") != "%0D%0A"){
+	if(formData.get("message") != "%0D%0A" && formData.get("message") != null ){
 	var data = {'id': formData.get("id"), 'message' : formData.get("message") }
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', window.location.href, true);
@@ -29,7 +29,7 @@ function submitForm() {
  }
  
 var fetch_messages = new XMLHttpRequest();
-var url = window.location.href + ".txt"; 
+var url = "/peers/" +window.location.pathname+ ".txt"; 
 
 setInterval(function(){
     fetch_messages.onreadystatechange = function() {

@@ -3,10 +3,9 @@
 
 
 #include "modules/peer.h"
-#include "modules/crypto.h"
 #include "modules/webio.h"
 #include "modules/config.h"
-#include "modules/tcp-listener.h"
+#include "lib/tcp-listener.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -20,36 +19,30 @@
 
 
 int main(void) {
-    map config = config_load();
-    
-    RSA* r = createRSAfromFile("private.pem",0);
-    if(r == NULL){
-        logger_log("RSA key not found! Generating a new one...");
-        r = generate_key();
-        if(r == NULL){
-            printOpenSSLError("Error generating RSA key pair!");
-            return 2;
-        }
-        r = createRSAfromFile("private.pem",0);
+    Map config = config_load();
+
+    FILE *seed_file;
+    seed_file = fopen("seed.txt", "r");
+    char seed[17];
+    if (seed_file == NULL) {
+        logger_log("Seed not found! Generating a new one...");
+        strcpy(seed, generateSeed(16));
+        seed_file = fopen("seed.txt", "w");
+        fprintf(seed_file, "%s", seed);
+
+    } else {
+        fgets(seed, 512, seed_file);
     }
+    fclose(seed_file);
+    char id[18];
+	strcpy(id, seed);
 
-    char pub[16964];
-    char priv[2049];
-    RSA_getPublicKey(r,pub);
-    RSA_getPrivateKey(r,priv);
-    RSA_free(r);
+
     char buf[513];
-    char id[MD5_DIGEST_LENGTH];
 
-    md5(priv,id);
-    node_data mynode;
+
+    Node_data mynode;
     strcpy(mynode.id, id);
-    strcpy(mynode.pubkey_str, pub);
-    strcpy(mynode.privkey_str, priv);
-    char *base64Key;
-    base64Encode((unsigned char*)pub,strlen(pub),&base64Key);
-
-    mynode.pubkey = createRSA((unsigned char*)mynode.pubkey_str,1);
 
     char * nickname = map_getValue(config,"nickname");
     if(nickname != NULL) {
@@ -92,7 +85,7 @@ int main(void) {
 
     //Connecting to peers
     logger_log("Checking peers.txt for peers...");
-    peerList peerList1;
+    PeerList peerList1;
     peer_initList(&peerList1);
 
     FILE *peer_file;
@@ -119,7 +112,11 @@ int main(void) {
     char* folder = map_getValue(config,"interface-folder");
     if(folder == NULL)
         folder = DEFAULT_WWW_FOLDER;
-    res = webio_create(atoi(port),folder,mynode,false,&webIo);
+    char* local_mode_str = map_getValue(config,"interface-local");
+    bool local_mode =false;
+    if(strcmp(local_mode_str,"true") == 0)
+        local_mode = true;
+    res = webio_create(atoi(port),folder,mynode,!local_mode,&webIo);
     if(res != 0){
         return EXIT_FAILURE;
     }
@@ -129,7 +126,7 @@ int main(void) {
 
 
     char *command =(char*) malloc(64);
-    sprintf(command,"start http://127.0.0.1:%d",tcp_getSockPort(webIo.socket));
+    sprintf(command,"start http://127.0.0.1:%d/",tcp_getSockPort(webIo.socket));
     system(command);
     free(command);
 
@@ -145,7 +142,7 @@ int main(void) {
                 if(peer_HandleConnection(listening, &peerList1, mynode,&master) != 0)
                     logger_log("Error while receiving connection...");
             }else if(sock == webIo.socket ){
-                res = webio_handleRequest(webIo,peerList1);
+                res = webio_handleRequest(webIo,&peerList1);
                 if(res == -2){
                     run = false;
                 }
@@ -164,16 +161,17 @@ int main(void) {
                 }else{
                     if(strlen(buf) ==0)
                         continue;
-                    map m = getHandshakeData(buf);
-                    map_dump(m);
+                    Map m = getPacketData(buf);
+
                     char file[64];
                     int k = peer_getPeer(peerList1, sock);
-                    sprintf(file,"%s%s.txt",DEFAULT_WWW_FOLDER,peerList1.array[k].peerData.id);
+                    sprintf(file,"%speers/%s.txt",DEFAULT_WWW_FOLDER,peerList1.array[k].peerData.id);
                     logger_log("Message received from %s",peerList1.array[k].peerData.id);
                     FILE *fp;
                     fp = fopen(file,"a");
                     fprintf(fp,"%s\n",map_getValue(m,"message"));
                     fclose(fp);
+                    free(m.pairs);
                 }
             }
         }

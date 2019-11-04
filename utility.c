@@ -19,9 +19,9 @@ char* generateSeed(int len){
     result[len] = '\0';
     return result;
 }
-map getHandshakeData(char* text){
+Map getPacketData(char* text){
 
-    map result;
+    Map result;
     map_init(&result);
     if (text[0] == '@')
         memmove(text, text+1, strlen(text));
@@ -45,7 +45,7 @@ map getHandshakeData(char* text){
     }
     return result;
 }
-
+/*
 void md5(char *string, char outputBuffer[33]){
     unsigned char hash[MD5_DIGEST_LENGTH];
     MD5_CTX sha256;
@@ -59,7 +59,7 @@ void md5(char *string, char outputBuffer[33]){
     }
     outputBuffer[64] = 0;
 }
-
+*/
 void logger_log(const char* _Format, ...){
     FILE * fp;
     fp  = fopen("log.txt","a");

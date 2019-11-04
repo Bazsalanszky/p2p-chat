@@ -6,7 +6,7 @@
 
 #pragma once
 #include "../utility.h"
-#include "map.h"
+#include "../lib/map.h"
 
 
-config config_load();
+Config config_load();

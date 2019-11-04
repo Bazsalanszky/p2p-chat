@@ -6,7 +6,7 @@
 #include "tcp-listener.h"
 
 struct addrinfo* tcp_createIPv4Socket(SOCKET *s,int port,bool wildcard){
-    struct addrinfo hint = {};
+    struct addrinfo hint;
     struct addrinfo *result = NULL;
 
     memset(&hint, 0, sizeof(struct addrinfo));
@@ -19,7 +19,7 @@ struct addrinfo* tcp_createIPv4Socket(SOCKET *s,int port,bool wildcard){
     hint.ai_addr = NULL;
     hint.ai_next = NULL;
 
-    //TODO: Use config to determine port
+    //TODO: Use Config to determine port
     char sport[10];
     sprintf( sport, "%d", port);
     int res = getaddrinfo(NULL, sport, &hint, &result);
@@ -43,7 +43,8 @@ int tcp_bindnlisten(SOCKET s,struct addrinfo* addr,int conn_count){
     int res = bind(s, addr->ai_addr, addr->ai_addrlen);
     if (res == SOCKET_ERROR) {
         logger_log("Error binding socket!");
-        switch(WSAGetLastError()){
+        int r = WSAGetLastError();
+        switch(r){
             case WSAENETDOWN:
                 logger_log("The network subsystem has failed.");
                 break;
@@ -67,6 +68,9 @@ int tcp_bindnlisten(SOCKET s,struct addrinfo* addr,int conn_count){
                 break;
             case WSAENOBUFS:
                 logger_log("Not enough buffers are available or there are too many connections!");
+                break;
+            default:
+                logger_log("Error: %d",WSAGetLastError());
                 break;
         }
         freeaddrinfo(addr);

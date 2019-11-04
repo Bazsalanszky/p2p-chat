@@ -5,18 +5,18 @@
 
 #include "map.h"
 
-void map_init(map *m) {
+void map_init(Map *m) {
     m->length = 0;
     m->size = 0;
     m->pairs = 0;
 }
 
-bool map_isFound(map map, char *key) {
+bool map_isFound(Map map, char *key) {
     char* res = map_getValue(map,key);
     return (res == NULL) ? false : true;
 }
 
-char *map_getValue(map m, char *key) {
+char *map_getValue(Map m, char *key) {
     int min = 0;
     int max = m.length-1;
     int kp = (min+max)/2;
@@ -30,17 +30,17 @@ char *map_getValue(map m, char *key) {
     return min <= max ? m.pairs[kp].value : NULL;
 }
 
-void map_dump(map m) {
+void map_dump(Map m) {
     for (int i = 0; i < m.length; ++i) {
         printf("%s %s\n", m.pairs[i].key, m.pairs[i].value);
     }
 }
 
-void map_addPair(map *m, pair p) {
+void map_addPair(Map *m, Pair p) {
     if (m->length >= m->size) {
         assert(m->length == m->size);
         size_t new_size = (m->size + 2) * 2;
-        pair *new_list = realloc(m->pairs, new_size * sizeof(pair));
+        Pair *new_list = realloc(m->pairs, new_size * sizeof(Pair));
         if (new_list == 0)
             printf("OUT OF MEMORY!");
         m->size = new_size;
@@ -50,19 +50,19 @@ void map_addPair(map *m, pair p) {
     map_sort(m);
 }
 
-pair map_make_pair(char *key, char *value) {
-    pair result;
+Pair map_make_pair(char *key, char *value) {
+    Pair result;
     strcpy(result.key, key);
     strcpy(result.value, value);
     return result;
 }
 
-void map_sort(map* m) {
+void map_sort(Map* m) {
 
     for (int i = m->length - 1; i > 0; --i) {
         for (int j = 0; j < i; ++j) {
             if (strcmp(m->pairs[j].key, m->pairs[j + 1].key) > 0) {
-                pair tmp = m->pairs[j];
+                Pair tmp = m->pairs[j];
                 m->pairs[j] = m->pairs[j + 1];
                 m->pairs[j + 1] = tmp;
             }

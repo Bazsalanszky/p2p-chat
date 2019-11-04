@@ -4,11 +4,11 @@
 //
 #include "config.h"
 
-config config_load(){
-    config cfg;
+Config config_load(){
+    Config cfg;
     map_init(&cfg);
     FILE * f;
-    f = fopen("config.ini","r");
+    f = fopen("Config.ini","r");
     if(f != NULL) {
         char buf[256], key[65], value[65];
         while (fgets(buf, sizeof(buf), f) != NULL)
@@ -34,7 +34,7 @@ config config_load(){
                            "interface-folder=htdocs/\n"
                            "#A felhasználói felület csak ezen a gépen érhető elő (Alapértelmezett: true;Ajánlott)\n"
                            "interface-local=true" ;
-        f = fopen("config.ini","w");
+        f = fopen("Config.ini","w");
         fprintf(f,exampleConf);
         fclose(f);
     }

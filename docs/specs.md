@@ -5,7 +5,7 @@ A projektem célja egy Peer to Peer chat alkalmazás létrehozása. A lényege a
 ## A program futásának leírása
 
 1. Konfigurációs fájl betöltése
-2. RSA kulcs betöltése vagy létrehozása
+2. Azonosító létrehozása
 3. „Hallgató” socket létrehozása, a hallgatás elindítása
 4. Csatlakozás a meghatározott peerekhez
 5. Felhasználói felület létrehozása
@@ -23,7 +23,7 @@ A program ezekben az esetekben ír ki a képernyőre (és mindezt elmenti a `log
 
 ## Konfigurációs fájl
 
-A konfigurációs fájl arra szolgál, hogy a felhasználó igényei szerint beállíthassa,hogy hogyan működjön a program.Ez a fájl a `config.ini`. Itt a különböző értékek soronként `kulcs=érték` formátumban vannak.
+A konfigurációs fájl arra szolgál, hogy a felhasználó igényei szerint beállíthassa,hogy hogyan működjön a program.Ez a fájl a `Config.ini`. Itt a különböző értékek soronként `kulcs=érték` formátumban vannak.
 
 Ha egy sor kettős kereszttel(`#`) kezdődik,akkor azt a program kommentnek veszi.
 
@@ -50,7 +50,7 @@ Ahogy már az előbb említettem, a cél egy olyan hálózat kiépítése amiben
 
 Ahhoz hogy egy gép csatlakozhasson egy másikhoz először ismernie kell az IP címét (IPv4) és a portot,amin a program fut. Ezt a `peers.txt` nevű fájlban kell meghatározni,a program ezt az indításkor beolvassa soronként, `ipcím:port` formátumban.
 
-Miután csatlakoztak a  gépek „kezet fognak”,azaz mindkét gép küld magáról egy leírást.A leírás első karakterének kukac karakternek( `@`)kell lennie és tartalmaznia kell egy azonosítót (`id`), a portot amin a program fut(`port`) és egy RSA nyilvános kulcsot(`pubkey`) base64-es karakterkódolásban, amit az üzenetek titkosítására fog majd a program használni.Esetlegesen tartalmazhat egy becenevet(`nickname`) is. A különböző paraméterek AND jellel(`&`), a kulcsok és az értékek egyenlőségjellel(`=`)  vannak elválasztva
+Miután csatlakoztak a  gépek „kezet fognak”,azaz mindkét gép küld magáról egy leírást.A leírás első karakterének kukac karakternek( `@`)kell lennie és tartalmaznia kell egy azonosítót (`id`) és a portot amin a program fut(`port`).Esetlegesen tartalmazhat egy becenevet(`nickname`) is. A különböző paraméterek AND jellel(`&`), a kulcsok és az értékek egyenlőségjellel(`=`)  vannak elválasztva
 
 > Példa:
 >

@@ -6,7 +6,7 @@
 
 //Kouhai peer
 //Amikor mi csatlakozunk egy peerhez
-int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* fdSet){
+int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set* fdSet){
     struct sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(port);
@@ -21,9 +21,8 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         return -1;
     }
     logger_log("Connected to peer!Sending handshake...");
-    char handshake[DEFAULT_BUFLEN],*base64Key;
-    base64Encode((unsigned char*)my.pubkey_str,strlen(my.pubkey_str),&base64Key);
-    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,base64Key);
+    char handshake[DEFAULT_BUFLEN];
+    sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
     if(strlen(my.nick) != 0) {
         char buf[DEFAULT_BUFLEN];
         ZeroMemory(buf,DEFAULT_BUFLEN);
@@ -50,8 +49,8 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         logger_log("Error: Invalid response!");
         return -1;
     }
-    map m = getHandshakeData(buf);
-    node_data node;
+    Map m = getPacketData(buf);
+    Node_data node;
     strcpy(node.ip,ip);
 
     if(map_isFound(m,"valid") && strcmp("false", map_getValue(m,  "valid")) == 0) {
@@ -69,19 +68,6 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
         logger_log("Error: Invalid response!ID not found in handshake.");
         return -1;
     }
-    char* pbk_str = map_getValue(m,  "pubkey");
-    if(pbk_str != NULL) {
-        unsigned char* pubkey;
-
-        size_t len;
-        base64Decode(pbk_str,&pubkey,&len);
-        strcpy(node.pubkey_str,(const char*)pubkey);
-        node.pubkey = createRSA(pubkey,1);
-    } else {
-        logger_log("Error: Invalid response!RSA public key not found in handshake.");
-        return -1;
-    }
-
     char * port_str = map_getValue(m,"port");
     if(port_str != NULL) {
         node.port = atoi(port_str);
@@ -109,7 +95,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
             char ip[NI_MAXHOST];
              int port;
              sscanf(tmp, "%[^:]:%d", ip, &port);
-             if(!peer_isIPfoundInList(*peerList,ip,port))
+             if(!peer_IP_isFound(*peerList,ip,port))
                  peer_ConnetctTo(ip,port,peerList,my,fdSet);
             tmp = strtok(NULL,",");
         }
@@ -121,7 +107,7 @@ int peer_ConnetctTo(char* ip,int port,peerList* peerList, node_data my,fd_set* f
 
 //Senpai peer
 //Amikor a egy peer csatlakozik hozzánk
-int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_set* fdSet){
+int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd_set* fdSet){
     struct sockaddr_in client;
     int clientSize = sizeof(client);
     SOCKET sock = accept(listening, (struct sockaddr*)& client, &clientSize);
@@ -147,8 +133,8 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
 
 
     int len;
-    map m = getHandshakeData(buf);
-    node_data node;
+    Map m = getPacketData(buf);
+    Node_data node;
     strcpy(node.ip,ip);
 
     char* id = map_getValue(m,  "id");
@@ -158,19 +144,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
         logger_log("Error: Invalid response!ID not found in handshake.");
         return -1;
     }
-    char* base64Key = map_getValue(m,  "pubkey");
 
-    if(base64Key != NULL) {
-        unsigned char* pubkey;
-
-        size_t len;
-        base64Decode(base64Key,&pubkey,&len);
-        strcpy(node.pubkey_str,(const char*)pubkey);
-        node.pubkey = createRSA(pubkey,1);
-    } else {
-        logger_log("Error: Invalid response!RSA public key not found in handshake.");
-        return -1;
-    }
     char * port = map_getValue(m,  "port");
     if(port != NULL) {
         node.port = atoi(port);
@@ -182,7 +156,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
     if(map_isFound(m,"nickname")) {
         strcpy(node.nick, nickname);
     }
-    if(peer_isFoundInList(*peerList,node.id)){
+    if(peer_ID_isFound(*peerList,node.id)){
         logger_log("Handshake received, but the id sent is taken! Dropping peer...");
         char handshake[1024] = "@valid=false&error=ID_TAKEN";
         int res = send(sock, handshake, strlen(handshake), 0);
@@ -197,8 +171,7 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
     free(m.pairs);
     logger_log("Handshake recived! Sending response!");
     char handshake[DEFAULT_BUFLEN];
-    base64Encode((unsigned char*)my.pubkey_str,strlen(my.pubkey_str),&base64Key);
-    sprintf(handshake,"@id=%s&port=%d&pubkey=%s",my.id,my.port,base64Key);
+    sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
 
     if(strlen(my.nick) != 0) {
         ZeroMemory(buf,DEFAULT_BUFLEN);
@@ -239,14 +212,14 @@ int peer_HandleConnection(SOCKET listening,peerList *peerList, node_data my,fd_s
     return 0;
 }
 
-void peer_initList(peerList *list){
+void peer_initList(PeerList *list){
         list->size = 0;
         list->length = 0;
         list->array = 0;
 }
 
 
-bool peer_isFoundInList(peerList list,char* id){
+bool peer_ID_isFound(PeerList list, char* id){
     for(int i=0;i < list.length;++i){
         if(strcmp(list.array[i].peerData.id,id)==0) {
             return true;
@@ -254,7 +227,7 @@ bool peer_isFoundInList(peerList list,char* id){
     }
     return false;
 }
-bool peer_isIPfoundInList(struct peerList list,char* ip,int port){
+bool peer_IP_isFound(struct PeerList list, char* ip, int port){
     for(int i=0;i < list.length;++i){
         if(strcmp(list.array[i].peerData.ip,ip) == 0 && list.array[i].peerData.port == port) {
             return true;
@@ -264,7 +237,7 @@ bool peer_isIPfoundInList(struct peerList list,char* ip,int port){
 }
 
 
-void peer_addTolist(peerList *list, struct peer p){
+void peer_addTolist(PeerList *list, struct peer p){
     if (list->length >= list->size)
     {
         assert(list->length == list->size);
@@ -277,14 +250,14 @@ void peer_addTolist(peerList *list, struct peer p){
     }
     list->array[list->length++] = p;
 }
-void peer_removeFromList(struct peerList* list, int i){
+void peer_removeFromList(struct PeerList* list, int i){
     closesocket(list->array[i].socket);
     for (int k=i; k < list->length-1; ++k)
         list->array[k] =list->array[k+1];
     list->length--;
 }
 
-int peer_getPeer(struct peerList list,SOCKET socket){
+int peer_getPeer(struct PeerList list, SOCKET socket){
     for (int i = 0; i < list.length; ++i) {
         if(list.array[i].socket == socket)
             return i;
@@ -292,7 +265,7 @@ int peer_getPeer(struct peerList list,SOCKET socket){
     return  -1;
 }
 
-int peer_getIDPeer(struct peerList list, char* c) {
+int peer_ID_getPeer(struct PeerList list, char* c) {
     for (int i = 0; i < list.length; ++i) {
         if(strcmp(list.array[i].peerData.id,c) == 0)
             return i;
@@ -300,11 +273,3 @@ int peer_getIDPeer(struct peerList list, char* c) {
     return  -1;
 }
 
-Peer peer_getPeerByID(struct peerList list, char *c) {
-    Peer res;
-    for (int i = 0; i < list.length; ++i) {
-        if(strcmp(list.array[i].peerData.id,c) == 0)
-            return list.array[i];
-    }
-    return res;
-}

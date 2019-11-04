@@ -4,7 +4,7 @@
 //
 #pragma  once
 #include "../utility.h"
-#include "tcp-listener.h"
+#include "../lib/tcp-listener.h"
 #include "peer.h"
 
 
@@ -17,18 +17,20 @@ typedef struct webio{
 
 int webio_create(int port,char* folder,struct Node_data myData,bool wildcard,WebIO *webIo);
 
-int webio_handleRequest(WebIO wio,peerList list);
+int webio_handleRequest(WebIO wio,const PeerList *list);
 
-int webio_handleGETrequest(SOCKET client,WebIO wio,char * file,peerList list);
+int webio_handleGETrequest(SOCKET client,WebIO wio,char * file,const PeerList *list);
 
-int webio_handlePOSTrequest(SOCKET client,WebIO wio,peerList list,map post);
+int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post);
 
 char* webio_getMIMEtype(char* filename);
 
 char* webio_getFiletype(char* filename);
 
-void webio_getHeader(char* folder, char** result);
+void webio_getHeader(char* folder, char result[]);
 
-void getIndex(char* folder, peerList list, char outputBuffer[]);
+void webio_getIndex(char* folder, const PeerList *list, char *outputBuffer);
 
-char* getPeerPage(char* folder,Peer p);
+void webio_getPeerPage(char* folder, char *id, bool online, char *outputBuffer);
+
+bool webio_isPeerFound(char* folder,char* id);
