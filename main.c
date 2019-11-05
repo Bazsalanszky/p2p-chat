@@ -124,9 +124,9 @@ int main(void) {
 
     char *command = (char *) malloc(64);
     sprintf(command, "start http://127.0.0.1:%d/", tcp_getSockPort(webIo.socket));
-    //system(command);
+    system(command);
     free(command);
-
+    
     logger_log("Starting main loop...");
     bool run = true;
     while (run) {
