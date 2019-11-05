@@ -33,11 +33,11 @@ int webio_create(int port,char* folder,struct Node_data myData,bool wildcard,Web
 int webio_handleRequest(WebIO wio,const PeerList *list){
     SOCKET client = accept(wio.socket,NULL,NULL);
     char buf[8192];
-    ZeroMemory(buf,8192);
+    memset(buf,0,8192);
     int res = recv(client,buf,8192,0);
     if(res <=0){
         logger_log("Error with web interface!");
-        closesocket(client);
+        close(client);
         return -1;
     }
     char req[10];
@@ -111,7 +111,7 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,const PeerList *li
 
     char path[129];
 
-    ZeroMemory(path,sizeof(path));
+    memset(path,0,sizeof(path));
     strcat(path,wio.folder);
     char *response = (char *) malloc(sizeof(char) * 8192);
     int len = 0;
@@ -186,14 +186,14 @@ int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,const PeerList *li
         logger_log("Sending failed!");
         return -1;
     }
-    shutdown(client,SD_BOTH);
-    closesocket(client);
+    shutdown(client,SHUT_RDWR);
+    close(client);
 
     free(response);
 }
 
 int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post){
-    shutdown(client,SD_RECEIVE);
+    shutdown(client,SHUT_RD);
     char *response = "HTTP/1.1 304 Not Modified ";
 
     int res = send(client,response,strlen(response),0);
@@ -201,7 +201,7 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
         logger_log("Error with io");
         return -1;
     }
-    shutdown(client,SD_SEND);
+    shutdown(client,SHUT_RDWR);
 
     if(map_isFound(post,"id") && map_isFound(post,"message") && strcmp(map_getValue(post,"message"),"%0D%0A") != 0){
         char file[64];
@@ -221,7 +221,7 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
         sprintf(buf,"@message=%s",map_getValue(post,"message"));
         res = send(list->array[i].socket,buf,DEFAULT_BUFLEN,0);
         if(res == SOCKET_ERROR){
-            logger_log("Error sending message.Error: %d",WSAGetLastError());
+            logger_log("Error sending message.Error: %d",errno);
             return 2;
         }
         logger_log("Message sent to %s",map_getValue(post,"id"));

@@ -13,7 +13,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     inet_pton(AF_INET, ip, &hint.sin_addr);
 
     SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sock == INVALID_SOCKET) {
+    if (sock == SOCKET_ERROR) {
         return -1;
     }
     int res = connect(sock, (struct sockaddr*) &hint, sizeof(hint));
@@ -25,23 +25,23 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
     if(strlen(my.nick) != 0) {
         char buf[DEFAULT_BUFLEN];
-        ZeroMemory(buf,DEFAULT_BUFLEN);
+        memset(buf,0,DEFAULT_BUFLEN);
         sprintf(buf, "&nickname=%s",my.nick);
         strcat(handshake,buf);
     }
     res = send(sock,handshake,strlen(handshake),0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending peer list!Disconnecting..." );
-        closesocket(sock);
+        close(sock);
         return -1 ;
     }
     logger_log("Sent!Waiting for response...");
     char buf[DEFAULT_BUFLEN];
-    ZeroMemory(buf,DEFAULT_BUFLEN);
+    memset(buf,0,DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
         logger_log("Error: Invalid response!");
-        closesocket(sock);
+        close(sock);
         return -1;
     }
 
@@ -57,7 +57,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
         char error[129];
         sprintf(error,"Peer closed connection! Error: %s\n",map_getValue(m,"error"));
         logger_log(error);
-        closesocket(sock);
+        close(sock);
         return -1;
     }
 
@@ -75,7 +75,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
         logger_log("Error: Invalid response!Port not found in handshake.");
         return -1;
     }
-    ZeroMemory(node.nick,30);
+    memset(node.nick,0,30);
     char * nickname = map_getValue(m,"nickname");
     if(nickname != NULL) {
         strcpy(node.nick, nickname);
@@ -115,19 +115,19 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     char ip[NI_MAXHOST];
     char service[NI_MAXSERV];
 
-    ZeroMemory(ip, NI_MAXHOST);
+    memset(ip,0, NI_MAXHOST);
 
     inet_ntop(AF_INET, &client.sin_addr, ip, NI_MAXHOST);
 
     char buf[DEFAULT_BUFLEN];
-    ZeroMemory(buf,DEFAULT_BUFLEN);
+    memset(buf,0,DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
-        closesocket(sock);
+        close(sock);
         return -1;
     }
     if (buf[0] != '@') {
-        closesocket(sock);
+        close(sock);
         return -1;
     }
 
@@ -162,10 +162,10 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
         int res = send(sock, handshake, strlen(handshake), 0);
         if (res == SOCKET_ERROR) {
             logger_log("Error sending error message!Disconnecting...");
-            closesocket(sock);
+            close(sock);
             return -1;
         }
-        closesocket(sock);
+        close(sock);
         return -1;
     }
     free(m.pairs);
@@ -174,7 +174,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
 
     if(strlen(my.nick) != 0) {
-        ZeroMemory(buf,DEFAULT_BUFLEN);
+        memset(buf,0,DEFAULT_BUFLEN);
         sprintf(buf, "&nickname=%s",my.nick);
         strcat(handshake,buf);
     }
@@ -198,7 +198,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     int res = send(sock, handshake, strlen(handshake), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending handshake!Disconnecting...");
-        closesocket(sock);
+        close(sock);
         return -1;
     }
     Peer p;
@@ -251,7 +251,7 @@ void peer_addTolist(PeerList *list, struct peer p){
     list->array[list->length++] = p;
 }
 void peer_removeFromList(struct PeerList* list, int i){
-    closesocket(list->array[i].socket);
+    close(list->array[i].socket);
     for (int k=i; k < list->length-1; ++k)
         list->array[k] =list->array[k+1];
     list->length--;

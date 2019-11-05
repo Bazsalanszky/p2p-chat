@@ -16,9 +16,9 @@ Config config_load(){
             if (buf[0] == '#') continue;
             sscanf(buf, "%[^=]=%s\n", key, value);
             map_addPair(&cfg, map_make_pair(key, value));
-            ZeroMemory(key, 65);
-            ZeroMemory(value, 65);
-            ZeroMemory(buf, 256);
+            memset(key,0, 65);
+            memset(value,0, 65);
+            memset(buf,0, 256);
         }
     }else{
 
