@@ -3,22 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include "modules/peer.h"
 #include "modules/webio.h"
 #include "modules/config.h"
 #include "lib/tcp-listener.h"
 
 #pragma comment(lib, "ws2_32.lib")
-
-#ifdef RANDOM_PORT
-#define DEFAULT_PORT "0"
-#else
-#define DEFAULT_PORT "6327"
-#endif
-#define DEFAULT_INTERFACE_PORT "5081"
-#define DEFAULT_WWW_FOLDER "htdocs/"
-
 
 int main(void) {
     Map config = config_load();
@@ -121,12 +111,6 @@ int main(void) {
 
     logger_log("Started web interface at http://127.0.0.1:%d", tcp_getSockPort(webIo.socket));
 
-
-    char *command = (char *) malloc(64);
-    sprintf(command, "start http://127.0.0.1:%d/", tcp_getSockPort(webIo.socket));
-    system(command);
-    free(command);
-    
     logger_log("Starting main loop...");
     bool run = true;
     while (run) {

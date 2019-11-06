@@ -9,9 +9,9 @@ set(SOURCE_FILES modules/peer.h modules/peer.c utility.c utility.h modules/webio
 option(BUILD_DOC "Build Documentation" ON)
 
 
-add_executable(p2p main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
-add_executable(p2p-2 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
-add_executable(p2p-3 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
+add_executable(p2p main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h lib/net.h)
+add_executable(p2p-2 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h lib/net.h)
+add_executable(p2p-3 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h lib/net.h)
 set_target_properties( p2p-2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-2 )
 set_target_properties( p2p-3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-3 )
 # Függvények kipróbálására hoztam létre

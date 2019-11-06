@@ -80,7 +80,7 @@ bool peer_IP_isFound(struct PeerList list, char* ip, int port);
 void peer_addTolist(struct PeerList* list, struct peer peer);
 /*!
  * @brief Levesz egy elemet egy PeerList -ről.
- * @param[in,out] list Mutató a PeerList struktúrára,amiről le a karunk venni elemet
+ * @param[in,out] list Mutató a PeerList struktúrára,amiről le akarunk venni elemet
  * @param[in] index A peer indexe a listában
  */
 void peer_removeFromList(struct PeerList *list, int index);
