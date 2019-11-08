@@ -24,6 +24,19 @@
 #endif
 //Ez winsock2-ben definiálva van (ott elvileg unsigned long long int-ként)
 typedef int SOCKET;
+
+#ifndef SD_BOTH
+#define SD_BOTH SHUT_RDWR
+#endif
+#ifndef SD_RECEIVE
+#define SD_RECEIVE SHUT_RD
+#endi
+f#ifndef SD_SEND
+#define SD_SEND SHUT_WR
+#endif
+int closesocket(SOCKET s){
+    return close(s);
+}
 #elif _WIN32
 #include <ws2tcpip.h>
 #endif

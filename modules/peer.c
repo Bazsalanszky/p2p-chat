@@ -32,7 +32,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     res = send(sock,handshake,strlen(handshake),0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending peer list!Disconnecting..." );
-        close(sock);
+        closesocket(sock);
         return -1 ;
     }
     logger_log("Sent!Waiting for response...");
@@ -41,7 +41,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
         logger_log("Error: Invalid response!");
-        close(sock);
+        closesocket(sock);
         return -1;
     }
 
@@ -57,7 +57,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
         char error[129];
         sprintf(error,"Peer closed connection! Error: %s\n",map_getValue(m,"error"));
         logger_log(error);
-        close(sock);
+        closesocket(sock);
         return -1;
     }
 
@@ -123,11 +123,11 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     memset(buf,0,DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
-        close(sock);
+        closesocket(sock);
         return -1;
     }
     if (buf[0] != '@') {
-        close(sock);
+        closesocket(sock);
         return -1;
     }
 
@@ -164,10 +164,10 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
         int res = send(sock, handshake, strlen(handshake), 0);
         if (res == SOCKET_ERROR) {
             logger_log("Error sending error message!Disconnecting...");
-            close(sock);
+            closesocket(sock);
             return -1;
         }
-        close(sock);
+        closesocket(sock);
         return -1;
     }
     free(m.pairs);
@@ -200,7 +200,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     int res = send(sock, handshake, strlen(handshake), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending handshake!Disconnecting...");
-        close(sock);
+        closesocket(sock);
         return -1;
     }
     Peer p;
@@ -253,7 +253,7 @@ void peer_addTolist(PeerList *list, struct peer p){
     list->array[list->length++] = p;
 }
 void peer_removeFromList(struct PeerList* list, int i){
-    close(list->array[i].socket);
+    closesocket(list->array[i].socket);
     for (int k=i; k < list->length-1; ++k)
         list->array[k] =list->array[k+1];
     list->length--;

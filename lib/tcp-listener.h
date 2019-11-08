@@ -3,17 +3,6 @@
 // Datum: 2019. 10. 28.
 //
 #pragma once
-#include <errno.h>
-#include <unistd.h>
-#include <time.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <fcntl.h>
-#include <stdbool.h>
 #include "../utility.h"
 
 /*!

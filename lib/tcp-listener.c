@@ -56,7 +56,7 @@ int tcp_bindnlisten(SOCKET s,struct addrinfo* addr,int conn_count){
     res = listen(s, conn_count);
     if (res == -1) {
         logger_log("Error starting listening! Error: %d", errno);
-        close(s);
+        closesocket(s);
         return 2;
     }
     return 0;
@@ -67,7 +67,7 @@ struct sockaddr_in tcp_getAddr_in(SOCKET s) {
     socklen_t len = sizeof(sin);
     if (getsockname(s, (struct sockaddr *) &sin, &len) == -1) {
         logger_log("Error at getsockname!Error code: %d", errno);
-        close(s);
+        closesocket(s);
         exit(1);
     }
     return sin;

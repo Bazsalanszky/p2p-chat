@@ -1,5 +1,5 @@
 #define CRT_SECURE_NO_WARNINGS
-#pragma once
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,8 +16,8 @@ SOCKET web_sock;
 
 void closeSocks(){
     logger_log("Closing socket...");
-    close(listening);
-    close(web_sock);
+    closesocket(listening);
+    closesocket(web_sock);
 
 }
 
@@ -27,8 +27,15 @@ int main(void) {
 
     Node_data mynode = construct_Mynodedata(config);
     logger_log("Initialising core...");
-
-
+    #if defined(_WIN32)
+    WSADATA ws;
+    int r1 = WSAStartup(MAKEWORD(2,2),&ws);
+    if(r1 != 0){
+        logger_log("Error at WSAStartup.");
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    #endif
     struct addrinfo *result = NULL;
     result = tcp_createIPv4Socket(&listening, mynode.port, true);
     if (result == NULL) {

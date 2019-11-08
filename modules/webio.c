@@ -199,14 +199,14 @@ int webio_handleGETrequest(SOCKET client, WebIO wio, char* file, const PeerList 
         logger_log("Sending failed!");
         return -1;
     }
-    shutdown(client,SHUT_RDWR);
+    shutdown(client,SD_BOTH);
     close(client);
 
     free(response);
 }
 
 int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post){
-    shutdown(client,SHUT_RD);
+    shutdown(client,SD_RECEIVE);
     char *response = "HTTP/1.1 304 Not Modified ";
 
     int res = send(client,response,strlen(response),0);
@@ -214,7 +214,7 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
         logger_log("Error with io");
         return -1;
     }
-    shutdown(client,SHUT_RDWR);
+    shutdown(client,SD_BOTH);
 
     if(map_isFound(post,"id") && map_isFound(post,"message") && strcmp(map_getValue(post,"message"),"%0D%0A") != 0){
         char file[64];
@@ -223,7 +223,7 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
         DIR *d = opendir(folder);
         if(d == NULL)
         #if defined(_WIN32)
-            _mkdir(folder);
+            mkdir(folder);
         #else
             mkdir(folder, 0777); // notice that 777 is different than 0777
         #endif
