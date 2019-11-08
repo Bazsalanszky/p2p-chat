@@ -30,10 +30,11 @@ function submitForm() {
  
 var fetch_messages = new XMLHttpRequest();
 var url = "/peers/" +window.location.pathname+ ".txt"; 
-
+var last_text ="";
 setInterval(function(){
     fetch_messages.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) loadMessages(this.responseText.split("\n"));
+		last_text = this.responseText;
     };
     fetch_messages.open("GET", url, true);
     fetch_messages.send();
@@ -65,7 +66,7 @@ function loadMessages(arr) {
     for(i = 0; i < arr.length; i++) {
 		if(arr[i] == '') continue;      
 		if(arr[i].indexOf("Me:") == -1){    
-			out += '<div class="card"><div class="card-body"><h6 class="text-muted card-subtitle mb-2">cfcf5b70adee41b91df434291dfa6377<br></h6><p class="card-text">' +   joypixels.toImage(decodeURIComponent(arr[i].replaceAll('+',' '))) + '</p></div></div>';
+			out += '<div class="card"><div class="card-body"><h6 class="text-muted card-subtitle mb-2">'+window.location.pathname.replace("/","")+'<br></h6><p class="card-text">' +   joypixels.toImage(decodeURIComponent(arr[i].replaceAll('+',' '))) + '</p></div></div>';
         }else{
 			var msg = arr[i].replace("Me: ",""); 
 			out += '<div class="card"><div class="card-body"><h6 class="text-muted card-subtitle mb-2" style="text-align:right;">You<br></h6><p class="card-text" style="text-align:right;">' + joypixels.toImage((decodeURIComponent(msg.replaceAll('+',' ')))) + '</p></div></div>';

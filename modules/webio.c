@@ -11,15 +11,28 @@
 #endif
 
 
-int webio_create(int port,char* folder,struct Node_data myData,bool wildcard,WebIO *webIo){
+int webio_create(Config config, struct Node_data myData, WebIO *webIo){
+    char *port = map_getValue(config, "interface-port");
+    if (port == NULL)
+        port = DEFAULT_INTERFACE_PORT;
+    char *folder = map_getValue(config, "interface-folder");
+    if (folder == NULL)
+        folder = DEFAULT_WWW_FOLDER;
+    char *local_mode_str = map_getValue(config, "interface-local");
+    bool local_mode = false;
+    if (local_mode_str != NULL && strcmp(local_mode_str, "true") == 0)
+        local_mode = true;
 
     struct addrinfo *result = NULL;
     SOCKET listening;
-    result = tcp_createIPv4Socket(&listening,port,wildcard);
+    result = tcp_createIPv4Socket(&listening,atoi(port),!local_mode);
     if(result == NULL){
         return 1;
     }
-    tcp_bindnlisten(listening,result,SOMAXCONN);
+    int res = tcp_bindnlisten(listening,result,SOMAXCONN);
+    if(res != 0){
+        return 2;
+    }
     WebIO wio;
 
     wio.sockaddr = tcp_getAddr_in(listening);
@@ -30,7 +43,7 @@ int webio_create(int port,char* folder,struct Node_data myData,bool wildcard,Web
     return 0;
 }
 
-int webio_handleRequest(WebIO wio,const PeerList *list){
+int webio_handleRequest(WebIO wio, const PeerList *list){
     SOCKET client = accept(wio.socket,NULL,NULL);
     char buf[8192];
     memset(buf,0,8192);
@@ -104,7 +117,7 @@ char* webio_getFiletype(char* filename){
     return type;
 }
 
-int webio_handleGETrequest(SOCKET client,WebIO wio,char* file,const PeerList *list){
+int webio_handleGETrequest(SOCKET client, WebIO wio, char* file, const PeerList *list){
 
     char buf[8192];
     sscanf(buf,"%*s %s",file);
@@ -205,7 +218,16 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
 
     if(map_isFound(post,"id") && map_isFound(post,"message") && strcmp(map_getValue(post,"message"),"%0D%0A") != 0){
         char file[64];
-        sprintf(file,"%speers/%s.txt",wio.folder,map_getValue(post,"id"));
+        char folder[72];
+        sprintf(folder,"%s/peers/",wio.folder);
+        DIR *d = opendir(folder);
+        if(d == NULL)
+        #if defined(_WIN32)
+            _mkdir(folder);
+        #else
+            mkdir(folder, 0777); // notice that 777 is different than 0777
+        #endif
+        sprintf(file,"%s%s.txt",folder,map_getValue(post,"id"));
         FILE * f;
         f = fopen(file,"a");
         fprintf(f,"Me: %s\n",map_getValue(post,"message"));

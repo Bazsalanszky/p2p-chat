@@ -101,7 +101,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
         }
     }
     free(m.pairs);
-    logger_log("Peer validated (%s->%s)!",node.ip,node.id);
+    logger_log("Peer validated (%s->%s)!",inet_ntoa(hint.sin_addr),node.id);
     return 0;
 }
 
@@ -154,9 +154,11 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     }
     char * nickname = map_getValue(m,  "nickname");
     if(map_isFound(m,"nickname")) {
-        strcpy(node.nick, nickname);
+        strncpy(node.nick, nickname,29);
+        logger_log("Username: %s",node.nick);
     }
-    if(peer_ID_isFound(*peerList,node.id)){
+    bool t = peer_ID_isFound(*peerList,node.id);
+    if(t){
         logger_log("Handshake received, but the id sent is taken! Dropping peer...");
         char handshake[1024] = "@valid=false&error=ID_TAKEN";
         int res = send(sock, handshake, strlen(handshake), 0);
@@ -273,3 +275,23 @@ int peer_ID_getPeer(struct PeerList list, char* c) {
     return  -1;
 }
 
+void peer_loadPeerList(PeerList *list,Node_data mynode,fd_set * master) {
+    FILE *peer_file;
+    peer_file = fopen("peers.txt", "r");
+    if (peer_file == NULL) {
+        logger_log("peers.txt not found!");
+        peer_file = fopen("peers.txt", "w");
+        fprintf(peer_file, "");
+
+    } else {
+        char ip[NI_MAXHOST];
+        int port;
+        while (fscanf(peer_file, "%[^:]:%d\n", ip, &port) == 2) {
+            if (peer_ConnetctTo(ip, port, list, mynode, master) != 0) {
+                logger_log("Error while connecting to peer...");
+            }
+        }
+
+    }
+    fclose(peer_file);
+}

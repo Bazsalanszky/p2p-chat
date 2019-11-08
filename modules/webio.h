@@ -3,9 +3,11 @@
 // Dátum:  2019. 10. 14..
 //
 #pragma  once
+#include <dirent.h>
 #include "../utility.h"
 #include "../lib/tcp-listener.h"
 #include "peer.h"
+#include "config.h"
 
 
 typedef struct webio{
@@ -15,11 +17,11 @@ typedef struct webio{
     struct Node_data nodeData;
 } WebIO;
 
-int webio_create(int port,char* folder,struct Node_data myData,bool wildcard,WebIO *webIo);
+int webio_create(Config config, struct Node_data myData, WebIO *webIo);
 
-int webio_handleRequest(WebIO wio,const PeerList *list);
+int webio_handleRequest(WebIO wio, const PeerList *list);
 
-int webio_handleGETrequest(SOCKET client,WebIO wio,char * file,const PeerList *list);
+int webio_handleGETrequest(SOCKET client, WebIO wio, char * file, const PeerList *list);
 
 int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post);
 
@@ -34,3 +36,4 @@ void webio_getIndex(char* folder, const PeerList *list, char *outputBuffer);
 void webio_getPeerPage(char* folder, char *id, bool online, char *outputBuffer);
 
 bool webio_isPeerFound(char* folder,char* id);
+

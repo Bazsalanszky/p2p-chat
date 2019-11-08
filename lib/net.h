@@ -13,6 +13,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <fcntl.h>
+//Mappákhoz
+#include <sys/stat.h>
 //Winsock2 kompatiblitás érdekében
 #ifndef SOCKET_ERROR
     #define SOCKET_ERROR -1
