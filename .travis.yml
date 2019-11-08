@@ -1,20 +1,21 @@
 language: c
-os:
-  - linux
-  - windows
+
 dist: trusty
 sudo: required
-install:
-  - if [ "$TRAVIS_OS_NAME" = "windows" ]; choco install doxygen.install ; fi
+
 before_script:
-  # create a build folder for the out-of-source build
   - mkdir build
-  # switch to build directory
   - cd build
-  # run cmake; here we assume that the project's
-  # top-level CMakeLists.txt is located at '..'
   - cmake ..
-script:
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; make ; fi
-  - if [ "$TRAVIS_OS_NAME" = "windows" ]; export PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin":$PATH ; fi
-  - if [ "$TRAVIS_OS_NAME" = "windows" ]; MSBuild.exe p2p.sln; fi
+
+matrix:
+  include:
+    - os: windows
+      install:
+        - choco install doxygen.install
+      script:
+        - export PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin":$PATH
+        - MSBuild.exe p2p.sln
+    - os: linux
+      script:
+        - make
