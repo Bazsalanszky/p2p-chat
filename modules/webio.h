@@ -3,7 +3,6 @@
 // Dátum:  2019. 10. 14..
 //
 #pragma  once
-#include <dirent.h>
 #include "../utility.h"
 #include "../lib/tcp-listener.h"
 #include "peer.h"

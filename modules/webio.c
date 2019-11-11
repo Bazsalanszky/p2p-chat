@@ -220,8 +220,6 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
         char file[64];
         char folder[72];
         sprintf(folder,"%s/peers/",wio.folder);
-        DIR *d = opendir(folder);
-        if(d == NULL)
         #if defined(_WIN32)
             mkdir(folder);
         #else

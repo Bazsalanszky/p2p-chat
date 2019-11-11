@@ -1,8 +1,4 @@
 language: c
-
-dist: trusty
-sudo: required
-
 before_script:
   - mkdir build
   - cd build
@@ -19,3 +15,5 @@ matrix:
     - os: linux
       script:
         - make
+      dist: ubuntu
+      sudo: required
