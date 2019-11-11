@@ -7,6 +7,9 @@
 #include "../lib/tcp-listener.h"
 #include "peer.h"
 #include "config.h"
+#ifdef __MINGW32__
+#include <dirent.h>
+#endif
 
 
 typedef struct webio{
@@ -20,19 +23,19 @@ int webio_create(Config config, struct Node_data myData, WebIO *webIo);
 
 int webio_handleRequest(WebIO wio, const PeerList *list);
 
-int webio_handleGETrequest(SOCKET client, WebIO wio, char * file, const PeerList *list);
+static int webio_handleGETrequest(SOCKET client, WebIO wio, char * file, const PeerList *list);
 
-int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post);
+static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post);
 
-char* webio_getMIMEtype(char* filename);
+static char* webio_getMIMEtype(char* filename);
 
-char* webio_getFiletype(char* filename);
+static char* webio_getFiletype(char* filename);
 
-void webio_getHeader(char* folder, char result[]);
+static void webio_getHeader(char* folder, char result[]);
 
-void webio_getIndex(char* folder, const PeerList *list, char *outputBuffer);
+static void webio_getIndex(char* folder, const PeerList *list, char *outputBuffer);
 
-void webio_getPeerPage(char* folder, char *id, bool online, char *outputBuffer);
+static void webio_getPeerPage(char* folder, char *id, bool online, char *outputBuffer);
 
-bool webio_isPeerFound(char* folder,char* id);
+static bool webio_isPeerFound(char* folder,char* id);
 

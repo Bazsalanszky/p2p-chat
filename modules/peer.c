@@ -92,16 +92,19 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     if(peers != NULL) {
         char* tmp = strtok(peers,",");
         while(tmp != NULL){
-            char ip[NI_MAXHOST];
-             int port;
-             sscanf(tmp, "%[^:]:%d", ip, &port);
-             if(!peer_IP_isFound(*peerList,ip,port))
-                 peer_ConnetctTo(ip,port,peerList,my,fdSet);
+			 char ip1[NI_MAXHOST];
+             int port1;
+			 if (sscanf(tmp, "%[^:]:%d", ip1, &port1) != 2) {
+				 tmp = strtok(NULL, ",");
+				 continue;
+			 }
+             if(!peer_IP_isFound(*peerList,ip1,port1))
+                 peer_ConnetctTo(ip1,port1,peerList,my,fdSet);
             tmp = strtok(NULL,",");
         }
     }
-    free(m.pairs);
-    logger_log("Peer validated (%s->%s)!",inet_ntoa(hint.sin_addr),node.id);
+    //free(m.pairs);
+    //logger_log("Peer validated (%s->%s)!",inet_ntoa(hint.sin_addr),node.id);
     return 0;
 }
 

@@ -40,11 +40,12 @@ void map_addPair(Map *m, Pair p) {
     if (m->length >= m->size) {
         assert(m->length == m->size);
         size_t new_size = (m->size + 2) * 2;
-        Pair *new_list = realloc(m->pairs, new_size * sizeof(Pair));
-        if (new_list == 0)
-            printf("OUT OF MEMORY!");
+        m->pairs = realloc(m->pairs, new_size * sizeof(Pair));
+		if (m->pairs == NULL) {
+			printf("OUT OF MEMORY!");
+			abort();
+		}
         m->size = new_size;
-        m->pairs = new_list;
     }
     m->pairs[m->length++] = p;
     map_sort(m);

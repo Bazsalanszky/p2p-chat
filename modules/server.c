@@ -53,7 +53,7 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList list,N
             }
         } else {
             for (int i = 0; i < list.length; i++) {
-                SOCKET sock = list.array[i].socket;
+                 SOCKET sock = list.array[i].socket;
                 if(!FD_ISSET(sock,&copy))
                     continue;
                 char buf[DEFAULT_BUFLEN];

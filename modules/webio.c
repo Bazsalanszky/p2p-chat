@@ -4,13 +4,6 @@
 //
 #include "webio.h"
 
-#ifdef RANDOM_PORT
-#define DEFAULT_INTERFACE_PORT "0"
-#else
-#define DEFAULT_INTERFACE_PORT "5081"
-#endif
-
-
 int webio_create(Config config, struct Node_data myData, WebIO *webIo){
     char *port = map_getValue(config, "interface-port");
     if (port == NULL)
@@ -50,7 +43,7 @@ int webio_handleRequest(WebIO wio, const PeerList *list){
     int res = recv(client,buf,8192,0);
     if(res <=0){
         logger_log("Error with web interface!");
-        close(client);
+        closesocket(client);
         return -1;
     }
     char req[10];
@@ -117,7 +110,7 @@ char* webio_getFiletype(char* filename){
     return type;
 }
 
-int webio_handleGETrequest(SOCKET client, WebIO wio, char* file, const PeerList *list){
+static int webio_handleGETrequest(SOCKET client, WebIO wio, char* file, const PeerList *list){
 
     char buf[8192];
     sscanf(buf,"%*s %s",file);
@@ -200,12 +193,12 @@ int webio_handleGETrequest(SOCKET client, WebIO wio, char* file, const PeerList 
         return -1;
     }
     shutdown(client,SD_BOTH);
-    close(client);
+    closesocket(client);
 
     free(response);
 }
 
-int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post){
+static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post){
     shutdown(client,SD_RECEIVE);
     char *response = "HTTP/1.1 304 Not Modified ";
 
@@ -221,6 +214,7 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
         char folder[72];
         sprintf(folder,"%s/peers/",wio.folder);
         #if defined(_WIN32)
+
             mkdir(folder);
         #else
             mkdir(folder, 0777); // notice that 777 is different than 0777
@@ -247,7 +241,7 @@ int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map 
         logger_log("Message sent to %s",map_getValue(post,"id"));
     }else map_dump(post);
 }
-void webio_getHeader(char* folder,char result[]) {
+static void webio_getHeader(char* folder,char result[]) {
 
     char path[65];
     strcpy(path, folder);
@@ -266,7 +260,7 @@ void webio_getHeader(char* folder,char result[]) {
         result = "<html>";
 }
 
-void webio_getIndex(char* folder, const PeerList *list, char *outputBuffer){
+static void webio_getIndex(char* folder, const PeerList *list, char *outputBuffer){
     char content[8192] ="";
     char header[4096] ="";
 
@@ -299,7 +293,7 @@ void webio_getIndex(char* folder, const PeerList *list, char *outputBuffer){
     strcpy(outputBuffer,content);
 }
 
-void webio_getPeerPage(char *folder, char *id, bool online, char *outputBuffer) {
+static void webio_getPeerPage(char *folder, char *id, bool online, char *outputBuffer) {
 	char content[8192] = "";
 	char header[4096] = "";
 
@@ -324,7 +318,7 @@ void webio_getPeerPage(char *folder, char *id, bool online, char *outputBuffer) 
 	strcpy(outputBuffer, content);
 }
 
-bool webio_isPeerFound(char* folder,char *id) {
+static bool webio_isPeerFound(char* folder,char *id) {
 
     char file[129];
     sprintf(file,"%s/peers/%s.txt",folder,id);

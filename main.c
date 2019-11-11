@@ -8,6 +8,7 @@
 #include "modules/config.h"
 #include "modules/server.h"
 #include "lib/tcp-listener.h"
+#include "lib/debugmalloc/debugmalloc.h"
 
 SOCKET listening;
 SOCKET web_sock;
@@ -16,7 +17,6 @@ void closeSocks(){
     logger_log("Closing socket...");
     closesocket(listening);
     closesocket(web_sock);
-
 }
 
 int main(void) {
@@ -28,6 +28,7 @@ int main(void) {
 
     #if defined(WIN32)
     WSADATA ws;
+	
     int r1 = WSAStartup(MAKEWORD(2,2),&ws);
     if(r1 != 0){
         logger_log("Error at WSAStartup.");
@@ -59,7 +60,6 @@ int main(void) {
     PeerList peerList1;
     peer_initList(&peerList1);
 
-
     WebIO webIo;
 
     res = webio_create(config,mynode, &webIo);
@@ -73,7 +73,9 @@ int main(void) {
     logger_log("Starting main loop...");
 
     serverThread(listening,&master,webIo,peerList1,mynode);
-    free(peerList1.array);
-    free(config.pairs);
+    if(peerList1.size >0)free(peerList1.array);
+    //Ezzel mi a baj?
+    if(config.size > 0) free(config.pairs);
+    closeSocks();
     return 0;
 }
