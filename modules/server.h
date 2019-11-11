@@ -5,6 +5,12 @@
 #pragma once
 #include "peer.h"
 #include "webio.h"
+/*!
+ *
+ * @param list
+ * @param mynode
+ * @param master
+ */
 void peer_loadPeerList(PeerList *list,Node_data mynode,fd_set * master);
 /*!
  *
@@ -17,4 +23,12 @@ void getSeed(char*output);
  * @return
  */
 Node_data construct_Mynodedata(Config cfg);
+/*!
+ *
+ * @param listening
+ * @param master
+ * @param webIo
+ * @param list
+ * @param mynode
+ */
 void serverThread(SOCKET listening, fd_set* master, WebIO webIo, PeerList list,Node_data mynode);

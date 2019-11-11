@@ -9,8 +9,6 @@
 #include "modules/server.h"
 #include "lib/tcp-listener.h"
 
-#pragma comment(lib, "ws2_32.lib")
-
 SOCKET listening;
 SOCKET web_sock;
 
@@ -27,7 +25,8 @@ int main(void) {
 
     Node_data mynode = construct_Mynodedata(config);
     logger_log("Initialising core...");
-    #if defined(_WIN32)
+
+    #if defined(WIN32)
     WSADATA ws;
     int r1 = WSAStartup(MAKEWORD(2,2),&ws);
     if(r1 != 0){
@@ -36,6 +35,7 @@ int main(void) {
         return EXIT_FAILURE;
     }
     #endif
+
     struct addrinfo *result = NULL;
     result = tcp_createIPv4Socket(&listening, mynode.port, true);
     if (result == NULL) {

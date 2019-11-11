@@ -30,13 +30,13 @@ typedef int SOCKET;
 #endif
 #ifndef SD_RECEIVE
 #define SD_RECEIVE SHUT_RD
-#endi
-f#ifndef SD_SEND
+#endif
+#ifndef SD_SEND
 #define SD_SEND SHUT_WR
 #endif
-int closesocket(SOCKET s){
-    return close(s);
-}
-#elif _WIN32
+
+
+#elif WIN32
 #include <ws2tcpip.h>
+#pragma comment(lib, "ws2_32.lib")
 #endif

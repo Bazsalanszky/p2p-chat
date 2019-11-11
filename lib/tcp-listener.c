@@ -76,3 +76,8 @@ int tcp_getSockPort(SOCKET s){
     struct sockaddr_in sin = tcp_getAddr_in(s);
     return ntohs(sin.sin_port);
 }
+#if defined(__linux__) || defined(__CYGWIN__)
+int closesocket(SOCKET s) {
+        return close(s);
+}
+#endif

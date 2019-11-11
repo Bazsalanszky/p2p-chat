@@ -5,6 +5,12 @@
 #pragma once
 #include "../utility.h"
 
+
+#if defined(__linux__) || defined(__CYGWIN__)
+int closesocket(SOCKET s);
+#endif
+
+
 /*!
  * @brief Létrehoz egy Listening socket-et \p port porton
  * @param[in] socket Mutató az inicializálandó socket-re

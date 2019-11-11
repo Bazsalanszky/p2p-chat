@@ -14,5 +14,8 @@
 #endif
 #define DEFAULT_INTERFACE_PORT "5081"
 #define DEFAULT_WWW_FOLDER "htdocs/"
-
+/*!
+ * @brief Betölti a `config.ini` fájlt és létrehoz egy Map struktúrát abból.
+ * @return A betöltött file Map struktúrája
+ */
 Config config_load();
