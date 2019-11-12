@@ -5,6 +5,7 @@
 
 
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
 #include "../utility.h"
 #include "../lib/map.h"
 #ifdef RANDOM_PORT

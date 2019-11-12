@@ -41,7 +41,7 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList list,N
     while (run) {
         fd_set copy = *master;
         SOCKET last = (list.length > 0) ? list.array[list.length - 1].socket : webIo.socket;
-        int count = select(last+1, &copy, NULL, NULL, NULL);
+        int count = select(((int)last)+1, &copy, NULL, NULL, NULL);
 
         if (FD_ISSET(listening, &copy)) {
             if (peer_HandleConnection(listening, &list, mynode, master) != 0)

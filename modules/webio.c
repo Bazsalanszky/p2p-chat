@@ -52,7 +52,7 @@ int webio_handleRequest(WebIO wio, const PeerList *list) {
         res = webio_handleGETrequest(client, wio, file, list);
 
     } else if (strncmp(buf, "POST",4) == 0) {
-        int i = strlen(buf) - 1;
+        int i =(int) strlen(buf) - 1;
         while (buf[i] != '\n') {
             i--;
         }
@@ -177,7 +177,7 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *lis
     shutdown(client, SD_RECEIVE);
     char *response = "HTTP/1.1 304 Not Modified ";
 
-    int res = send(client, response, strlen(response), 0);
+    int res = send(client, response,(int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error with io");
         return -1;
@@ -190,7 +190,6 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *lis
         char folder[72];
         sprintf(folder, "%s/peers/", wio.folder);
 #if defined(_WIN32)
-
         mkdir(folder);
 #else
         mkdir(folder, 0777); // notice that 777 is different than 0777
@@ -314,7 +313,7 @@ void webio_sendOKHeader(SOCKET socket, char *file) {
                       "Content-Encoding: gzip\r\n"
                       "Content-Language: en\r\n"
                       "Content-Type: %s\r\n\r\n", webio_getMIMEtype(file));
-    int res = send(socket, response, strlen(response), 0);
+    int res = send(socket, response, (int)strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending http ok header!");
     }
@@ -326,7 +325,7 @@ void webio_sendOKHeader_wSize(SOCKET socket, char *file,int size) {
                       "Content-Language: en\r\n"
                       "Content-Length: %d\r\n"
                       "Content-Type: %s\r\n\r\n",size, webio_getMIMEtype(file));
-    int res = send(socket, response, strlen(response), 0);
+    int res = send(socket, response,(int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending http ok header!");
     }

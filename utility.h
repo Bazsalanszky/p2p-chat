@@ -4,9 +4,7 @@
 //
 
 #pragma once
-#ifndef CRT_SECURE_NO_WARNINGS
-#define CRT_SECURE_NO_WARNINGS
-#endif
+#define _CRT_SECURE_NO_WARNINGS
 #include "lib/map.h"
 #include "lib/net.h"
 #include <time.h>
