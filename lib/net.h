@@ -6,6 +6,7 @@
 #if defined(__linux__) || defined(__CYGWIN__)
 #include <errno.h>
 #include <unistd.h>
+#include <sys/uio.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/types.h>
@@ -15,6 +16,7 @@
 #include <fcntl.h>
 //Mappákhoz
 #include <sys/stat.h>
+#include <sys/sendfile.h>
 //Winsock2 kompatiblitás érdekében
 #ifndef SOCKET_ERROR
     #define SOCKET_ERROR -1
@@ -36,7 +38,8 @@ typedef int SOCKET;
 #endif
 
 
-#elif WIN32
+#elif defined(WIN32) || defined(__CYGWIN__)
 #include <ws2tcpip.h>
+#include <mswsock.h>
 #pragma comment(lib, "ws2_32.lib")
 #endif

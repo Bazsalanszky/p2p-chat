@@ -39,3 +39,9 @@ static void webio_getPeerPage(char* folder, char *id, bool online, char *outputB
 
 static bool webio_isPeerFound(char* folder,char* id);
 
+static void webio_sendOKHeader(SOCKET socket,char* file);
+
+static void webio_sendPage(SOCKET socket, char* content);
+
+static void webio_send404Page(SOCKET socket);
+
