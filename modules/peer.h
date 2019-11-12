@@ -2,6 +2,9 @@
  *  @author Toldi Balázs Ádám
  *  @date 2019. 10. 09.
 */
+#ifndef CRT_SECURE_NO_WARNINGS
+#define CRT_SECURE_NO_WARNINGS
+#endif
 #pragma once
 #include "../utility.h"
 #include "config.h"

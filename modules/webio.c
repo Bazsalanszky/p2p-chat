@@ -45,15 +45,13 @@ int webio_handleRequest(WebIO wio, const PeerList *list) {
         closesocket(client);
         return -1;
     }
-    char req[10];
-    sscanf(buf, "%s", req);
 
-    if (strcmp(req, "GET") == 0) {
+    if (strncmp(buf, "GET",3) == 0) {
         char file[50];
         sscanf(buf, "%*s %s", file);
         res = webio_handleGETrequest(client, wio, file, list);
 
-    } else if (strcmp(req, "POST") == 0) {
+    } else if (strncmp(buf, "POST",4) == 0) {
         int i = strlen(buf) - 1;
         while (buf[i] != '\n') {
             i--;
@@ -113,14 +111,10 @@ char *webio_getFiletype(char *filename) {
 
 static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const PeerList *list) {
 
-    char buf[8192];
-    sscanf(buf, "%*s %s", file);
-
     char path[129];
 
     memset(path, 0, sizeof(path));
     strcat(path, wio.folder);
-    char response[8192];
     int len = 0;
     if (file[0] == '/')
         memmove(file, file + 1, strlen(file));
@@ -145,11 +139,13 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const Pe
                                   OPEN_EXISTING,
                                   FILE_ATTRIBUTE_NORMAL,
                                   NULL);
-        if(file == INVALID_HANDLE_VALUE)
+        DWORD size = GetFileSize(file,NULL);
+        if(file == INVALID_HANDLE_VALUE || size< 0)
             webio_send404Page(client);
         else {
-            webio_sendOKHeader(client,path);
+            webio_sendOKHeader_wSize(client,path,size);
             TransmitFile(client, file, 0, 0, NULL, NULL, 0);
+            CloseHandle(file);
         }
 #else
         logger_log(path);
@@ -174,6 +170,7 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const Pe
         shutdown(client,SD_BOTH);
     }
     closesocket(client);
+	return 0;
 }
 
 static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post) {
@@ -210,7 +207,6 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *lis
             return 1;
         }
 
-        unsigned char encrypted[DEFAULT_BUFLEN];
         sprintf(buf, "@message=%s", map_getValue(post, "message"));
         res = send(list->array[i].socket, buf, DEFAULT_BUFLEN, 0);
         if (res == SOCKET_ERROR) {
@@ -219,6 +215,7 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *lis
         }
         logger_log("Message sent to %s", map_getValue(post, "id"));
     } else map_dump(post);
+	return 0;
 }
 
 static void webio_getHeader(char *folder, char result[]) {
@@ -322,6 +319,18 @@ void webio_sendOKHeader(SOCKET socket, char *file) {
         logger_log("Error sending http ok header!");
     }
 }
+void webio_sendOKHeader_wSize(SOCKET socket, char *file,int size) {
+    char response[8192];
+    sprintf(response, "HTTP/1.1 200 OK "
+                      "Content-Encoding: gzip\r\n"
+                      "Content-Language: en\r\n"
+                      "Content-Length: %d\r\n"
+                      "Content-Type: %s\r\n\r\n",size, webio_getMIMEtype(file));
+    int res = send(socket, response, strlen(response), 0);
+    if (res == SOCKET_ERROR) {
+        logger_log("Error sending http ok header!");
+    }
+}
 
 void webio_send404Page(SOCKET socket) {
 
@@ -330,7 +339,7 @@ void webio_send404Page(SOCKET socket) {
                      "Content-Language: en\r\n"
                      "Content-Type: text/html\r\n\r\n"
                      "<h1>Error 404 File not found!</h1>";
-    int res = send(socket, response, strlen(response), 0);
+    int res = send(socket, response, (int)strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending 404 page!");
     }
@@ -339,7 +348,7 @@ void webio_send404Page(SOCKET socket) {
 void webio_sendPage(SOCKET socket, char *content) {
     char f[] = "index.html";
     webio_sendOKHeader(socket, f);
-    int res = send(socket, content, strlen(content), 0);
+    int res = send(socket, content,(int) strlen(content), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending page!");
     }

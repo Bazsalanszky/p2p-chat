@@ -135,7 +135,6 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     }
 
 
-    int len;
     Map m = getPacketData(buf);
     Node_data node;
     strcpy(node.ip,ip);
@@ -164,7 +163,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     if(t){
         logger_log("Handshake received, but the id sent is taken! Dropping peer...");
         char handshake[1024] = "@valid=false&error=ID_TAKEN";
-        int res = send(sock, handshake, strlen(handshake), 0);
+        int res = send(sock, handshake,(int) strlen(handshake), 0);
         if (res == SOCKET_ERROR) {
             logger_log("Error sending error message!Disconnecting...");
             closesocket(sock);

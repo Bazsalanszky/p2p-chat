@@ -13,7 +13,7 @@
 SOCKET listening;
 SOCKET web_sock;
 
-void closeSocks(){
+void closeSocks(void){
     logger_log("Closing socket...");
     closesocket(listening);
     closesocket(web_sock);
@@ -75,7 +75,7 @@ int main(void) {
     serverThread(listening,&master,webIo,peerList1,mynode);
     if(peerList1.size >0)free(peerList1.array);
     //Ezzel mi a baj?
-    if(config.size > 0) free(config.pairs);
+    //if(config.size > 0) free(config.pairs);
     closeSocks();
     return 0;
 }

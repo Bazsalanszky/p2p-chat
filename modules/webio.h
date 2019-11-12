@@ -2,7 +2,9 @@
 // Készítette: Toldi Balázs Ádám
 // Dátum:  2019. 10. 14..
 //
+
 #pragma  once
+#define CRT_SECURE_NO_WARNINGS
 #include "../utility.h"
 #include "../lib/tcp-listener.h"
 #include "peer.h"
@@ -10,6 +12,8 @@
 #ifdef __MINGW32__
 #include <dirent.h>
 #endif
+
+
 
 
 typedef struct webio{
@@ -40,6 +44,7 @@ static void webio_getPeerPage(char* folder, char *id, bool online, char *outputB
 static bool webio_isPeerFound(char* folder,char* id);
 
 static void webio_sendOKHeader(SOCKET socket,char* file);
+static void webio_sendOKHeader_wSize(SOCKET socket,char* file,int size);
 
 static void webio_sendPage(SOCKET socket, char* content);
 
