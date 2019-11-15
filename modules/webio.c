@@ -3,6 +3,7 @@
 // Dátum:  2019. 10. 14..
 //
 #include "webio.h"
+
 int webio_create(Config config, struct Node_data myData, WebIO *webIo) {
     char *port = map_getValue(config, "interface-port");
     if (port == NULL)
@@ -46,13 +47,13 @@ int webio_handleRequest(WebIO wio, const PeerList *list) {
         return -1;
     }
 
-    if (strncmp(buf, "GET",3) == 0) {
+    if (strncmp(buf, "GET", 3) == 0) {
         char file[50];
         sscanf(buf, "%*s %s", file);
         res = webio_handleGETrequest(client, wio, file, list);
 
-    } else if (strncmp(buf, "POST",4) == 0) {
-        int i =(int) strlen(buf) - 1;
+    } else if (strncmp(buf, "POST", 4) == 0) {
+        int i = (int) strlen(buf) - 1;
         while (buf[i] != '\n') {
             i--;
         }
@@ -134,21 +135,20 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const Pe
         strcat(path, file);
         //File küldés windows-on
 #ifdef _WIN32
-        HANDLE file = CreateFileA(path,GENERIC_READ,FILE_SHARE_READ,
+        HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ,
                                   NULL,
                                   OPEN_EXISTING,
                                   FILE_ATTRIBUTE_NORMAL,
                                   NULL);
-        DWORD size = GetFileSize(file,NULL);
-        if(file == INVALID_HANDLE_VALUE || size< 0)
+        DWORD size = GetFileSize(file, NULL);
+        if (file == INVALID_HANDLE_VALUE || size < 0)
             webio_send404Page(client);
         else {
-            webio_sendOKHeader_wSize(client,path,size);
+            webio_sendOKHeader_wSize(client, path, size);
             TransmitFile(client, file, 0, 0, NULL, NULL, 0);
             CloseHandle(file);
         }
 #else
-        logger_log(path);
         int fd = open(path, O_RDONLY);
         if (fd == -1)
             webio_send404Page(client);
@@ -167,17 +167,17 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const Pe
             }
         }
 #endif
-        shutdown(client,SD_BOTH);
+        shutdown(client, SD_BOTH);
     }
     closesocket(client);
-	return 0;
+    return 0;
 }
 
 static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post) {
     shutdown(client, SD_RECEIVE);
     char *response = "HTTP/1.1 304 Not Modified ";
 
-    int res = send(client, response,(int) strlen(response), 0);
+    int res = send(client, response, (int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error with io");
         return -1;
@@ -214,7 +214,7 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *lis
         }
         logger_log("Message sent to %s", map_getValue(post, "id"));
     } else map_dump(post);
-	return 0;
+    return 0;
 }
 
 static void webio_getHeader(char *folder, char result[]) {
@@ -251,8 +251,7 @@ static void webio_getIndex(char *folder, const PeerList *list, char *outputBuffe
                              "<a href=\"%s\">",
                     content, list->array[i].peerData.id);
             if (strcmp(list->array[i].peerData.nick, "") != 0) {
-                sprintf(content, "%s%s %d- ", content, list->array[i].peerData.nick,
-                        (int) strlen(list->array[i].peerData.nick));
+                sprintf(content, "%s%s - ", content, list->array[i].peerData.nick);
             }
             sprintf(content, "%s%s</a></li>\n", content, list->array[i].peerData.id);
         }
@@ -261,6 +260,50 @@ static void webio_getIndex(char *folder, const PeerList *list, char *outputBuffe
         sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
                          "  No peers connected!\n"
                          "</div>\n", content);
+    strcat(content, "<h1>Offline messages:</h1>\n");
+    char path[65];
+    sprintf(path, "%s/peers/", folder);
+#ifdef _DIRENT_H_
+    DIR *d;
+
+    d = opendir(path);
+    if (d != NULL){
+        strcat(content, "<ul>\n");
+        struct dirent *de;
+        while ((de = readdir(d)) != NULL) {
+            if(strcmp(de->d_name,".") == 0 || strcmp(de->d_name,"..") == 0) continue;
+            char peer[33];
+            sscanf(de->d_name,"%[^.]",peer);
+            sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
+        }
+        closedir(d);
+        strcat(content, "</ul>\n");
+    }else{
+        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
+                         "  No offline messages!\n"
+                         "</div>\n", content);
+    }
+#else
+    HANDLE dir;
+    WIN32_FIND_DATA file_data;
+    strcat(path,"/*");
+    if ((dir = FindFirstFile(path, &file_data)) == INVALID_HANDLE_VALUE)
+        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
+                         "  No offline messages!\n"
+                         "</div>\n", content);
+    else{
+        strcat(content, "<ul>\n");
+        do{
+            if(strcmp(file_data.cFileName,".") == 0 || strcmp(file_data.cFileName,"..") == 0) continue;
+            char peer[33];
+            sscanf(file_data.cFileName,"%[^.]",peer);
+            sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
+        }while(FindNextFile(dir,&file_data));
+        FindClose(dir);
+    }
+#endif
+
+
     sprintf(content, "%s<script>setTimeout(function(){\n"
                      "   window.location.reload(1);\n"
                      "}, 5000);</script>\n"
@@ -313,19 +356,20 @@ void webio_sendOKHeader(SOCKET socket, char *file) {
                       "Content-Encoding: gzip\r\n"
                       "Content-Language: en\r\n"
                       "Content-Type: %s\r\n\r\n", webio_getMIMEtype(file));
-    int res = send(socket, response, (int)strlen(response), 0);
+    int res = send(socket, response, (int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending http ok header!");
     }
 }
-void webio_sendOKHeader_wSize(SOCKET socket, char *file,int size) {
+
+void webio_sendOKHeader_wSize(SOCKET socket, char *file, int size) {
     char response[8192];
     sprintf(response, "HTTP/1.1 200 OK "
                       "Content-Encoding: gzip\r\n"
                       "Content-Language: en\r\n"
                       "Content-Length: %d\r\n"
-                      "Content-Type: %s\r\n\r\n",size, webio_getMIMEtype(file));
-    int res = send(socket, response,(int) strlen(response), 0);
+                      "Content-Type: %s\r\n\r\n", size, webio_getMIMEtype(file));
+    int res = send(socket, response, (int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending http ok header!");
     }
@@ -338,7 +382,7 @@ void webio_send404Page(SOCKET socket) {
                      "Content-Language: en\r\n"
                      "Content-Type: text/html\r\n\r\n"
                      "<h1>Error 404 File not found!</h1>";
-    int res = send(socket, response, (int)strlen(response), 0);
+    int res = send(socket, response, (int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending 404 page!");
     }
@@ -347,9 +391,9 @@ void webio_send404Page(SOCKET socket) {
 void webio_sendPage(SOCKET socket, char *content) {
     char f[] = "index.html";
     webio_sendOKHeader(socket, f);
-    int res = send(socket, content,(int) strlen(content), 0);
+    int res = send(socket, content, (int) strlen(content), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending page!");
     }
-    shutdown(socket,SD_BOTH);
+    shutdown(socket, SD_BOTH);
 }

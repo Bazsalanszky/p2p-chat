@@ -104,7 +104,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
         }
     }
     //free(m.pairs);
-    //logger_log("Peer validated (%s->%s)!",inet_ntoa(hint.sin_addr),node.id);
+    logger_log("Peer validated (%s->%s)!",inet_ntoa(hint.sin_addr),node.id);
     return 0;
 }
 

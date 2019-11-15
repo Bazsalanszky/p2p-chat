@@ -1,5 +1,6 @@
 //
-// Created by balazs on 2019. 11. 07..
+// Készítette: Toldi Balázs Ádám
+// Dátum: 2019. 11. 07.
 //
 
 #include "server.h"

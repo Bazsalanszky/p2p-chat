@@ -3,7 +3,7 @@
 // Datum: 2019. 11. 05.
 //
 #pragma once
-#if defined(__linux__) || defined(__CYGWIN__)
+#if defined(__linux__) && !defined(__CYGWIN__)
 #include <errno.h>
 #include <unistd.h>
 #include <sys/uio.h>
@@ -17,6 +17,7 @@
 //Mappákhoz
 #include <sys/stat.h>
 #include <sys/sendfile.h>
+#include <dirent.h>
 //Winsock2 kompatiblitás érdekében
 #ifndef SOCKET_ERROR
     #define SOCKET_ERROR -1
@@ -39,6 +40,11 @@ typedef int SOCKET;
 
 
 #elif defined(WIN32) || defined(__CYGWIN__)
+
+#ifdef __MINGW32__
+#include <dirent.h>
+#endif
+
 #include <ws2tcpip.h>
 #include <mswsock.h>
 #pragma comment(lib, "ws2_32.lib")

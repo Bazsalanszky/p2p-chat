@@ -1,6 +1,6 @@
 //
 // Készítette: Toldi Balázs Ádám
-// Dátum:  2019. 10. 14..
+// Dátum:  2019. 10. 14.
 //
 
 #pragma  once
@@ -9,9 +9,6 @@
 #include "../lib/tcp-listener.h"
 #include "peer.h"
 #include "config.h"
-#ifdef __MINGW32__
-#include <dirent.h>
-#endif
 
 
 
@@ -44,9 +41,9 @@ static void webio_getPeerPage(char* folder, char *id, bool online, char *outputB
 static bool webio_isPeerFound(char* folder,char* id);
 
 static void webio_sendOKHeader(SOCKET socket,char* file);
+
 static void webio_sendOKHeader_wSize(SOCKET socket,char* file,int size);
 
 static void webio_sendPage(SOCKET socket, char* content);
 
 static void webio_send404Page(SOCKET socket);
-

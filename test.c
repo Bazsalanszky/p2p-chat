@@ -5,12 +5,15 @@
 //#include <ws2tcpip.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "lib/map.h"
+#include "lib/debugmalloc/debugmalloc.h"
 
 int main(int argc , char **argv)
 {
-    char buf[10] = "lma";
-    char buf2[10] = "lma";
-
-    sprintf(buf,"%c%s",'a',buf2);
-    printf("%s",buf);
+    Map m;
+    map_init(&m);
+    map_addPair(&m,map_make_pair("Test","1"));
+    //map_dump(m);
+    free(m.pairs);
+    return 0;
 }
