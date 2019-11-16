@@ -263,7 +263,25 @@ static void webio_getIndex(char *folder, const PeerList *list, char *outputBuffe
     strcat(content, "<h1>Offline messages:</h1>\n");
     char path[65];
     sprintf(path, "%s/peers/", folder);
-#ifdef _DIRENT_H_
+#ifdef _MSC_VER
+    HANDLE dir;
+    WIN32_FIND_DATA file_data;
+    strcat(path,"/*");
+    if ((dir = FindFirstFile(path, &file_data)) == INVALID_HANDLE_VALUE)
+        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
+                         "  No offline messages!\n"
+                         "</div>\n", content);
+    else{
+        strcat(content, "<ul>\n");
+        do{
+            if(strcmp(file_data.cFileName,".") == 0 || strcmp(file_data.cFileName,"..") == 0) continue;
+            char peer[33];
+            sscanf(file_data.cFileName,"%[^.]",peer);
+            sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
+        }while(FindNextFile(dir,&file_data));
+        FindClose(dir);
+    }
+#else
     DIR *d;
 
     d = opendir(path);
@@ -282,24 +300,6 @@ static void webio_getIndex(char *folder, const PeerList *list, char *outputBuffe
         sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
                          "  No offline messages!\n"
                          "</div>\n", content);
-    }
-#else
-    HANDLE dir;
-    WIN32_FIND_DATA file_data;
-    strcat(path,"/*");
-    if ((dir = FindFirstFile(path, &file_data)) == INVALID_HANDLE_VALUE)
-        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
-                         "  No offline messages!\n"
-                         "</div>\n", content);
-    else{
-        strcat(content, "<ul>\n");
-        do{
-            if(strcmp(file_data.cFileName,".") == 0 || strcmp(file_data.cFileName,"..") == 0) continue;
-            char peer[33];
-            sscanf(file_data.cFileName,"%[^.]",peer);
-            sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
-        }while(FindNextFile(dir,&file_data));
-        FindClose(dir);
     }
 #endif
 
