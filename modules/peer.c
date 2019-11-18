@@ -13,7 +13,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     inet_pton(AF_INET, ip, &hint.sin_addr);
 
     SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sock == INVALID_SOCKET) {
+    if (sock == SOCKET_ERROR) {
         return -1;
     }
     int res = connect(sock, (struct sockaddr*) &hint, sizeof(hint));
@@ -25,7 +25,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
     if(strlen(my.nick) != 0) {
         char buf[DEFAULT_BUFLEN];
-        ZeroMemory(buf,DEFAULT_BUFLEN);
+        memset(buf,0,DEFAULT_BUFLEN);
         sprintf(buf, "&nickname=%s",my.nick);
         strcat(handshake,buf);
     }
@@ -37,7 +37,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     }
     logger_log("Sent!Waiting for response...");
     char buf[DEFAULT_BUFLEN];
-    ZeroMemory(buf,DEFAULT_BUFLEN);
+    memset(buf,0,DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
         logger_log("Error: Invalid response!");
@@ -75,7 +75,7 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
         logger_log("Error: Invalid response!Port not found in handshake.");
         return -1;
     }
-    ZeroMemory(node.nick,30);
+    memset(node.nick,0,30);
     char * nickname = map_getValue(m,"nickname");
     if(nickname != NULL) {
         strcpy(node.nick, nickname);
@@ -92,16 +92,19 @@ int peer_ConnetctTo(char* ip, int port, PeerList* peerList, Node_data my, fd_set
     if(peers != NULL) {
         char* tmp = strtok(peers,",");
         while(tmp != NULL){
-            char ip[NI_MAXHOST];
-             int port;
-             sscanf(tmp, "%[^:]:%d", ip, &port);
-             if(!peer_IP_isFound(*peerList,ip,port))
-                 peer_ConnetctTo(ip,port,peerList,my,fdSet);
+			 char ip1[NI_MAXHOST];
+             int port1;
+			 if (sscanf(tmp, "%[^:]:%d", ip1, &port1) != 2) {
+				 tmp = strtok(NULL, ",");
+				 continue;
+			 }
+             if(!peer_IP_isFound(*peerList,ip1,port1))
+                 peer_ConnetctTo(ip1,port1,peerList,my,fdSet);
             tmp = strtok(NULL,",");
         }
     }
     free(m.pairs);
-    logger_log("Peer validated (%s->%s)!",node.ip,node.id);
+    logger_log("Peer validated (%s->%s)!",inet_ntoa(hint.sin_addr),node.id);
     return 0;
 }
 
@@ -115,12 +118,12 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     char ip[NI_MAXHOST];
     char service[NI_MAXSERV];
 
-    ZeroMemory(ip, NI_MAXHOST);
+    memset(ip,0, NI_MAXHOST);
 
     inet_ntop(AF_INET, &client.sin_addr, ip, NI_MAXHOST);
 
     char buf[DEFAULT_BUFLEN];
-    ZeroMemory(buf,DEFAULT_BUFLEN);
+    memset(buf,0,DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
     if (inBytes <= 0) {
         closesocket(sock);
@@ -132,7 +135,6 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     }
 
 
-    int len;
     Map m = getPacketData(buf);
     Node_data node;
     strcpy(node.ip,ip);
@@ -154,12 +156,14 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     }
     char * nickname = map_getValue(m,  "nickname");
     if(map_isFound(m,"nickname")) {
-        strcpy(node.nick, nickname);
+        strncpy(node.nick, nickname,29);
+        logger_log("Username: %s",node.nick);
     }
-    if(peer_ID_isFound(*peerList,node.id)){
+    bool t = peer_ID_isFound(*peerList,node.id);
+    if(t){
         logger_log("Handshake received, but the id sent is taken! Dropping peer...");
         char handshake[1024] = "@valid=false&error=ID_TAKEN";
-        int res = send(sock, handshake, strlen(handshake), 0);
+        int res = send(sock, handshake,(int) strlen(handshake), 0);
         if (res == SOCKET_ERROR) {
             logger_log("Error sending error message!Disconnecting...");
             closesocket(sock);
@@ -174,7 +178,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     sprintf(handshake,"@id=%s&port=%d",my.id,my.port);
 
     if(strlen(my.nick) != 0) {
-        ZeroMemory(buf,DEFAULT_BUFLEN);
+        memset(buf,0,DEFAULT_BUFLEN);
         sprintf(buf, "&nickname=%s",my.nick);
         strcat(handshake,buf);
     }
@@ -273,3 +277,23 @@ int peer_ID_getPeer(struct PeerList list, char* c) {
     return  -1;
 }
 
+void peer_loadPeerList(PeerList *list,Node_data mynode,fd_set * master) {
+    FILE *peer_file;
+    peer_file = fopen("peers.txt", "r");
+    if (peer_file == NULL) {
+        logger_log("peers.txt not found!");
+        peer_file = fopen("peers.txt", "w");
+        fprintf(peer_file, "");
+
+    } else {
+        char ip[NI_MAXHOST];
+        int port;
+        while (fscanf(peer_file, "%[^:]:%d\n", ip, &port) == 2) {
+            if (peer_ConnetctTo(ip, port, list, mynode, master) != 0) {
+                logger_log("Error while connecting to peer...");
+            }
+        }
+
+    }
+    fclose(peer_file);
+}

@@ -1,18 +1,19 @@
 language: c
-os: windows
-install:
-  - choco install doxygen.install
-env:
-  - MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
 before_script:
-  - /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2017/BuildTools/Common7/Tools/VsDevCmd.bat
-  # create a build folder for the out-of-source build
   - mkdir build
-  # switch to build directory
   - cd build
-  # run cmake; here we assume that the project's
-  # top-level CMakeLists.txt is located at '..'
   - cmake ..
-script:
-  - export PATH=$MSBUILD_PATH:$PATH
-  - MSBuild.exe p2p.sln
+
+matrix:
+  include:
+    - os: windows
+      install:
+        - choco install doxygen.install
+      script:
+        - export PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin":$PATH
+        - MSBuild.exe p2p.sln
+    - os: linux
+      script:
+        - make
+      dist: ubuntu
+      sudo: required

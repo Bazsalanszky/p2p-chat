@@ -4,16 +4,18 @@
 //
 // Ebben a file-ban olyan függvényeket találunk, amelyeket sok helyen fel lehet használni vagy máshová nem illeszkedne
 //
-
+#ifndef CRT_SECURE_NO_WARNINGS
+#define CRT_SECURE_NO_WARNINGS
+#endif
 #include "utility.h"
 
 char* generateSeed(int len){
     static const char base58[] = "123456789"
                                  "ABCDEFGHJKLMNPQRSTUVWXYZ"
                                  "abcdefghijkmnopqrstuvwxyz";
-    srand(time(0));
-    char *result = malloc(sizeof(char) * len+1);
-    for(int i = 0;i<len;i++){
+    srand((unsigned int) time(NULL));
+    char *result = malloc(sizeof(char) * (len+1));
+    for(int i = 0;i<len-1;i++){
         result[i] = base58[rand() % 58];
     }
     result[len] = '\0';
@@ -38,28 +40,21 @@ Map getPacketData(char* text){
     {
         char key[65];
         char value[1024];
-        sscanf(tmp,"%[^=]=%s",key,value);
-        map_addPair(&result,map_make_pair(key,value));
-        ++i;
+        int r = sscanf(tmp,"%[^=]=%s",key,value);
+		if(r == 2)
+			map_addPair(&result,map_make_pair(key,value));
+		else if(r == 1)
+			map_addPair(&result, map_make_pair(key, "true"));
+		else {
+			tmp = strtok(NULL, "&");
+			continue;
+		}
+		i++;
         tmp = strtok (NULL, "&");
     }
     return result;
 }
-/*
-void md5(char *string, char outputBuffer[33]){
-    unsigned char hash[MD5_DIGEST_LENGTH];
-    MD5_CTX sha256;
-    MD5_Init(&sha256);
-    MD5_Update(&sha256, string, strlen(string));
-    MD5_Final(hash, &sha256);
-    int i = 0;
-    for(i = 0; i < MD5_DIGEST_LENGTH; i++)
-    {
-        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
-    }
-    outputBuffer[64] = 0;
-}
-*/
+
 void logger_log(const char* _Format, ...){
     FILE * fp;
     fp  = fopen("log.txt","a");
@@ -71,12 +66,13 @@ void logger_log(const char* _Format, ...){
     tm_info = localtime(&timer);
 
     strftime(buf, 26, "%Y.%m.%d. %H:%M:%S", tm_info);
-    char string[513];
     printf("[%s]\t",buf);
     fprintf(fp,"[%s]\t",buf);
     va_list args;
     va_start (args, _Format);
     vprintf(_Format,args);
+    va_end(args);
+    va_start (args, _Format);
     vfprintf(fp,_Format,args);
     va_end(args);
     fprintf(fp,"\n");

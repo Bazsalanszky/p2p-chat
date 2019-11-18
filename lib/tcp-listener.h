@@ -3,9 +3,13 @@
 // Datum: 2019. 10. 28.
 //
 #pragma once
-#include <ws2tcpip.h>
-#include <stdbool.h>
 #include "../utility.h"
+
+
+#if defined(__linux__) || defined(__CYGWIN__)
+int closesocket(SOCKET s);
+#endif
+
 
 /*!
  * @brief Létrehoz egy Listening socket-et \p port porton

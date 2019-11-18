@@ -4,7 +4,9 @@
 //
 
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
 #include "lib/map.h"
+#include "lib/net.h"
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,7 +14,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <assert.h>
-#include <ws2tcpip.h>
+
 
 //! (MAXIMUM) Ekkora mérető csomagokat küld el a program alapértelmezetten.
 #define DEFAULT_BUFLEN 4096

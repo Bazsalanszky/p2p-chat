@@ -1,13 +1,12 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.10)
 project(p2p C)
 
 set(CMAKE_C_STANDARD 99)
 set(GCC_COVERAGE_COMPILE_FLAGS "-Werror")
-find_package(Doxygen)
+
 set(SOURCE_FILES modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
 
 option(BUILD_DOC "Build Documentation" ON)
-
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     set(BUILD_DOC_DIR ${CMAKE_SOURCE_DIR}/build/docs)
@@ -29,14 +28,13 @@ else(DOXYGEN_FOUND)
     message("Doxygen needs to be installed to generate the documentation.")
 endif(DOXYGEN_FOUND)
 
-
-add_executable(p2p main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
-add_executable(p2p-2 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
-add_executable(p2p-3 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
+add_executable(p2p main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h lib/net.h modules/server.c modules/server.h)
+add_executable(p2p-2 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h lib/net.h modules/server.c modules/server.h)
+add_executable(p2p-3 main.c modules/peer.h modules/peer.c utility.c utility.h modules/webio.h modules/webio.c modules/config.h modules/config.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h lib/net.h modules/server.c modules/server.h)
 set_target_properties( p2p-2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-2 )
 set_target_properties( p2p-3 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/p2p-3 )
 # Függvények kipróbálására hoztam létre
-add_executable(test test.c utility.h utility.c lib/map.h lib/map.c)
+add_executable(test2 test.c utility.h utility.c lib/map.h lib/map.c lib/tcp-listener.c lib/tcp-listener.h)
 
     add_custom_command(TARGET p2p PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -62,4 +60,5 @@ if(WIN32)
     target_link_libraries(p2p wsock32 ws2_32)
     target_link_libraries(p2p-2 wsock32 ws2_32)
     target_link_libraries(p2p-3 wsock32 ws2_32)
+    target_link_libraries(test2 wsock32 ws2_32)
 endif()
