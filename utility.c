@@ -71,6 +71,8 @@ void logger_log(const char* _Format, ...){
     va_list args;
     va_start (args, _Format);
     vprintf(_Format,args);
+    va_end(args);
+    va_start (args, _Format);
     vfprintf(fp,_Format,args);
     va_end(args);
     fprintf(fp,"\n");
