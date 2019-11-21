@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include "modules/peer.h"
 #include "modules/webio.h"
@@ -18,9 +19,13 @@ void closeSocks(void){
     closesocket(listening);
     closesocket(web_sock);
 }
+void signalClose(int n){
+    closeSocks();
+}
 
 int main(void) {
     atexit(closeSocks);
+    signal(SIGTERM,signalClose);
     Map config = config_load();
 
     Node_data mynode = construct_Mynodedata(config);
@@ -28,7 +33,7 @@ int main(void) {
 
     #if defined(WIN32)
     WSADATA ws;
-	
+
     int r1 = WSAStartup(MAKEWORD(2,2),&ws);
     if(r1 != 0){
         logger_log("Error at WSAStartup.");
@@ -74,8 +79,7 @@ int main(void) {
 
     serverThread(listening,&master,webIo,peerList1,mynode);
     if(peerList1.size >0)free(peerList1.array);
-    //Ezzel mi a baj?
-    //if(config.size > 0) free(config.pairs);
-    closeSocks();
+    if(config.size > 0) free(config.pairs);
+
     return 0;
 }

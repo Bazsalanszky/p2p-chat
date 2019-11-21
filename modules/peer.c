@@ -157,7 +157,6 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     char * nickname = map_getValue(m,  "nickname");
     if(map_isFound(m,"nickname")) {
         strncpy(node.nick, nickname,29);
-        logger_log("Username: %s",node.nick);
     }
     bool t = peer_ID_isFound(*peerList,node.id);
     if(t){
