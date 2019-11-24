@@ -4,7 +4,7 @@
 //
 #pragma once
 #include "../utility.h"
-
+#include "debugmalloc/debugmalloc.h"
 
 #if defined(__linux__) || defined(__CYGWIN__)
 int closesocket(SOCKET s);

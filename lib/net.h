@@ -3,6 +3,7 @@
 // Datum: 2019. 11. 05.
 //
 #pragma once
+#include "debugmalloc/debugmalloc.h"
 #if defined(__linux__) && !defined(__CYGWIN__)
 #include <errno.h>
 #include <unistd.h>

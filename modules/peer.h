@@ -7,6 +7,8 @@
 #include "../utility.h"
 #include "config.h"
 #include "../lib/tcp-listener.h"
+#include "../lib/debugmalloc/debugmalloc.h"
+
 //! A különböző gépek adatait tároló struktúra
 typedef struct Node_data { //! A node IP címe(IPV4)
     char ip[NI_MAXHOST];    //! A node azonosítója                                                

@@ -5,6 +5,7 @@
 #pragma once
 #include "peer.h"
 #include "webio.h"
+#include "../lib/debugmalloc/debugmalloc.h"
 /*!
  *
  * @param list

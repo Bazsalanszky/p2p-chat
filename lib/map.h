@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "debugmalloc/debugmalloc.h"
 
 //! Párok, a map-ek építőlövei
 typedef struct Pair { //! A map

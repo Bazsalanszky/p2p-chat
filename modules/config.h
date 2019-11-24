@@ -8,6 +8,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "../utility.h"
 #include "../lib/map.h"
+#include "../lib/debugmalloc/debugmalloc.h"
 #ifdef RANDOM_PORT
 #define DEFAULT_PORT "0"
 #else

@@ -14,7 +14,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <assert.h>
-
+#include "lib/debugmalloc/debugmalloc.h"
 
 //! (MAXIMUM) Ekkora mérető csomagokat küld el a program alapértelmezetten.
 #define DEFAULT_BUFLEN 4096

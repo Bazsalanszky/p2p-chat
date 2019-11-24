@@ -9,6 +9,7 @@
 #include "../lib/tcp-listener.h"
 #include "peer.h"
 #include "config.h"
+#include "../lib/debugmalloc/debugmalloc.h"
 
 
 
