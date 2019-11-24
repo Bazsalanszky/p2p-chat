@@ -4,7 +4,7 @@
 //
 #include "webio.h"
 
-int webio_create(Config config, struct Node_data myData, WebIO *webIo) {
+int webio_create(Config config, struct PeerList *list, WebIO *webIo) {
     char *port = map_getValue(config, "interface-port");
     if (port == NULL)
         port = DEFAULT_INTERFACE_PORT;
@@ -20,23 +20,22 @@ int webio_create(Config config, struct Node_data myData, WebIO *webIo) {
     SOCKET listening;
     result = tcp_createIPv4Socket(&listening, atoi(port), !local_mode);
     if (result == NULL) {
-        return 1;
+        return 3;
     }
     int res = tcp_bindnlisten(listening, result, SOMAXCONN);
     if (res != 0) {
-        return 2;
+        return res;
     }
     WebIO wio;
 
-    wio.sockaddr = tcp_getAddr_in(listening);
     wio.socket = listening;
-    wio.nodeData = myData;
+    wio.list = list;
     strcpy(wio.folder, folder);
     *webIo = wio;
     return 0;
 }
 
-int webio_handleRequest(WebIO wio, const PeerList *list) {
+int webio_handleRequest(WebIO wio) {
     SOCKET client = accept(wio.socket, NULL, NULL);
     char buf[8192];
     memset(buf, 0, 8192);
@@ -46,13 +45,24 @@ int webio_handleRequest(WebIO wio, const PeerList *list) {
         closesocket(client);
         return -1;
     }
+    char method[5],v_major[2],v_minor[3],file[50];
+    sscanf(buf, "%s %s %*[^/]/%[^.].%s",method,file,v_major,v_minor);
+    if(strcmp(v_major,"1") != 0){
+        char *response = "HTTP/1.0 505 HTTP Version Not Supportedd"
+                         "Content-Encoding: gzip\r\n"
+                         "Content-Language: en\r\n"
+                         "Content-Type: text/html\r\n\r\n"
+                         "<h1>Error 505: HTTP version not supportedd!</h1>";
+        res = send(client, response, (int) strlen(response), 0);
+        if (res == SOCKET_ERROR) {
+            logger_log("Error sending 505 page!");
+        }
+        return -1;
+    }
+    if (strcmp(method, "GET") == 0) {
+        res = webio_handleGETrequest(client, wio, file);
 
-    if (strncmp(buf, "GET", 3) == 0) {
-        char file[50];
-        sscanf(buf, "%*s %s", file);
-        res = webio_handleGETrequest(client, wio, file, list);
-
-    } else if (strncmp(buf, "POST", 4) == 0) {
+    } else if (strcmp(method, "POST") == 0) {
         int i = (int) strlen(buf) - 1;
         while (buf[i] != '\n') {
             i--;
@@ -62,10 +72,20 @@ int webio_handleRequest(WebIO wio, const PeerList *list) {
         strcpy(tmp, buf + i);
         Map post = getPacketData(tmp);
 
-        res = webio_handlePOSTrequest(client, wio, list, post);
+        res = webio_handlePOSTrequest(client, wio, post);
         free(post.pairs);
-    } else
-        res = -1;
+    } else{
+        char *response = "HTTP/1.0 501 Not Implemented"
+                         "Content-Encoding: gzip\r\n"
+                         "Content-Language: en\r\n"
+                         "Content-Type: text/html\r\n\r\n"
+                         "<h1>Error 501: Method not implemented!</h1>";
+        res = send(client, response, (int) strlen(response), 0);
+        if (res == SOCKET_ERROR) {
+            logger_log("Error sending 501 page!");
+        }
+    }
+
 
     return res;
 }
@@ -102,6 +122,7 @@ char *webio_getMIMEtype(char *filename) {
 
 char *webio_getFiletype(char *filename) {
     char *ext = (char *) malloc(sizeof(char) * 10);
+    strcpy(ext,"");
     char *tmp = strtok(filename, ".");
     while (tmp != NULL) {
         strncpy(ext, tmp, 10);
@@ -110,7 +131,7 @@ char *webio_getFiletype(char *filename) {
     return ext;
 }
 
-static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const PeerList *list) {
+static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file) {
 
     char path[129];
 
@@ -121,11 +142,11 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const Pe
         memmove(file, file + 1, strlen(file));
     if (strcmp(file, "") == 0) {
         char index[8192] = "";
-        webio_getIndex(wio.folder, list, index);
+        webio_getIndex(wio, index);
         webio_sendPage(client, index);
-    } else if (peer_ID_isFound(*list, file) || webio_isPeerFound(wio.folder, file)) {
+    } else if (peer_ID_isFound(*(wio.list), file) || webio_isPeerFound(wio.folder, file)) {
         char cnt[8192] = "";
-        webio_getPeerPage(wio.folder, file, (peer_ID_getPeer(*list, file) != -1), cnt);
+        webio_getPeerPage(wio, file, cnt);
         webio_sendPage(client, cnt);
     } else if (strcmp(file, "kill") == 0) {
         webio_sendPage(client, "<h1>Server Killed!</h1>");
@@ -173,9 +194,9 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file, const Pe
     return 0;
 }
 
-static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *list, Map post) {
+static int webio_handlePOSTrequest(SOCKET client, WebIO wio, Map post) {
     shutdown(client, SD_RECEIVE);
-    char *response = "HTTP/1.1 304 Not Modified ";
+    char *response = "HTTP/1.0 304 Not Modified ";
 
     int res = send(client, response, (int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
@@ -192,7 +213,7 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *lis
 #if defined(_WIN32)
         mkdir(folder);
 #else
-        mkdir(folder, 0777); // notice that 777 is different than 0777
+        mkdir(folder, 0777);
 #endif
         sprintf(file, "%s%s.txt", folder, map_getValue(post, "id"));
         FILE *f;
@@ -200,20 +221,20 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, const PeerList *lis
         fprintf(f, "Me: %s\n", map_getValue(post, "message"));
         fclose(f);
         char buf[DEFAULT_BUFLEN];
-        int i = peer_ID_getPeer(*list, map_getValue(post, "id"));
+        int i = peer_ID_getPeer(*(wio.list), map_getValue(post, "id"));
         if (i < 0) {
             logger_log("Error sending message! Error: Peer offline!");
             return 1;
         }
 
         sprintf(buf, "@message=%s", map_getValue(post, "message"));
-        res = send(list->array[i].socket, buf, DEFAULT_BUFLEN, 0);
+        res = send(wio.list->array[i].socket, buf, DEFAULT_BUFLEN, 0);
         if (res == SOCKET_ERROR) {
             logger_log("Error sending message.Error: %d", errno);
             return 2;
         }
         logger_log("Message sent to %s", map_getValue(post, "id"));
-    } else map_dump(post);
+    }
     return 0;
 }
 
@@ -236,24 +257,24 @@ static void webio_getHeader(char *folder, char result[]) {
         result = "<html>";
 }
 
-static void webio_getIndex(char *folder, const PeerList *list, char *outputBuffer) {
+static void webio_getIndex(WebIO wio, char *outputBuffer) {
     char content[8192] = "";
     char header[4096] = "";
 
-    webio_getHeader(folder, header);
+    webio_getHeader(wio.folder, header);
     strcpy(content, header);
 
     strcat(content, "<h1>Peers:</h1>\n");
-    if (list->length > 0) {
+    if (wio.list->length > 0) {
         strcat(content, "<ul>\n");
-        for (int i = 0; i < list->length; ++i) {
+        for (int i = 0; i < wio.list->length; ++i) {
             sprintf(content, "%s<li>"
                              "<a href=\"%s\">",
-                    content, list->array[i].peerData.id);
-            if (strcmp(list->array[i].peerData.nick, "") != 0) {
-                sprintf(content, "%s%s - ", content, list->array[i].peerData.nick);
+                    content, wio.list->array[i].peerData.id);
+            if (strcmp(wio.list->array[i].peerData.nick, "") != 0) {
+                sprintf(content, "%s%s - ", content, wio.list->array[i].peerData.nick);
             }
-            sprintf(content, "%s%s</a></li>\n", content, list->array[i].peerData.id);
+            sprintf(content, "%s%s</a></li>\n", content, wio.list->array[i].peerData.id);
         }
         strcat(content, "</ul>\n");
     } else
@@ -262,7 +283,7 @@ static void webio_getIndex(char *folder, const PeerList *list, char *outputBuffe
                          "</div>\n", content);
     strcat(content, "<h1>Offline messages:</h1>\n");
     char path[65];
-    sprintf(path, "%s/peers/", folder);
+    sprintf(path, "%s/peers/", wio.folder);
 #ifdef _MSC_VER
     HANDLE dir;
     WIN32_FIND_DATA file_data;
@@ -313,13 +334,13 @@ static void webio_getIndex(char *folder, const PeerList *list, char *outputBuffe
     strcpy(outputBuffer, content);
 }
 
-static void webio_getPeerPage(char *folder, char *id, bool online, char *outputBuffer) {
+static void webio_getPeerPage(WebIO wio, char *id, char *outputBuffer) {
     char content[8192] = "";
     char header[4096] = "";
 
-    webio_getHeader(folder, header);
+    webio_getHeader(wio.folder, header);
     strcpy(content, header);
-
+    bool online = peer_ID_isFound(*wio.list,id);
     char *img = (online) ? "<img width=\"30\" height=\"30\" src=\"assets\\img\\on.svg\">"
                          : "<img width=\"30\" height=\"30\" src=\"assets\\img\\off.svg\">";
     char *disabled = (online) ? "" : "disabled";
@@ -352,7 +373,7 @@ static bool webio_isPeerFound(char *folder, char *id) {
 
 void webio_sendOKHeader(SOCKET socket, char *file) {
     char response[8192];
-    sprintf(response, "HTTP/1.1 200 OK "
+    sprintf(response, "HTTP/1.0 200 OK "
                       "Content-Encoding: gzip\r\n"
                       "Content-Language: en\r\n"
                       "Content-Type: %s\r\n\r\n", webio_getMIMEtype(file));
@@ -364,7 +385,7 @@ void webio_sendOKHeader(SOCKET socket, char *file) {
 
 void webio_sendOKHeader_wSize(SOCKET socket, char *file, int size) {
     char response[8192];
-    sprintf(response, "HTTP/1.1 200 OK "
+    sprintf(response, "HTTP/1.0 200 OK "
                       "Content-Encoding: gzip\r\n"
                       "Content-Language: en\r\n"
                       "Content-Length: %d\r\n"
@@ -377,7 +398,7 @@ void webio_sendOKHeader_wSize(SOCKET socket, char *file, int size) {
 
 void webio_send404Page(SOCKET socket) {
 
-    char *response = "HTTP/1.1 404 Not Found "
+    char *response = "HTTP/1.0 404 Not Found "
                      "Content-Encoding: gzip\r\n"
                      "Content-Language: en\r\n"
                      "Content-Type: text/html\r\n\r\n"

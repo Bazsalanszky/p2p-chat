@@ -67,7 +67,7 @@ int main(void) {
 
     WebIO webIo;
 
-    res = webio_create(config,mynode, &webIo);
+    res = webio_create(config,&peerList1, &webIo);
     if (res != 0) {
         return EXIT_FAILURE;
     }

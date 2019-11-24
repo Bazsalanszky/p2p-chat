@@ -48,7 +48,7 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList list,N
             if (peer_HandleConnection(listening, &list, mynode, master) != 0)
                 logger_log("Error while receiving connection...");
         } else if (FD_ISSET(webIo.socket, &copy)) {
-            int res = webio_handleRequest(webIo, &list);
+            int res = webio_handleRequest(webIo);
             if (res == -2) {
                 run = false;
             }

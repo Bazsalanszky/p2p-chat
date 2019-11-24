@@ -1,7 +1,7 @@
-/*!
- *  @author Toldi Balázs Ádám
- *  @date 2019. 10. 09.
-*/
+//
+//  Készítette: Toldi Balázs Ádám
+//  Dátum 2019. 10. 09.
+//
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
 #include "../utility.h"
@@ -22,7 +22,7 @@ typedef struct peer{        //! A peer általános adatait tartalmazó struktúr
     SOCKET socket;          //! A socket-et főbb adatait tartalmazó struktúra
     struct sockaddr_in sockaddr;
 } Peer;
-//! A peereket tartó lista
+//! @brief A peereket tartó lista
 //! @note Ez egy dinaamikusan méretezett tömb. Használat után fel kell szabadítani a lefoglalt memoriaterületet.
 typedef struct PeerList{
     //! A lista által lefoglalt hely
