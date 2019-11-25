@@ -37,15 +37,15 @@ Node_data construct_Mynodedata(Config cfg) {
     return result;
 }
 
-void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList list,Node_data mynode) {
+void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList* list,Node_data mynode) {
     bool run = true;
     while (run) {
         fd_set copy = *master;
-        SOCKET last = (list.length > 0) ? list.array[list.length - 1].socket : webIo.socket;
+        SOCKET last = (list->length > 0) ? list->array[list->length - 1].socket : webIo.socket;
         int count = select(((int)last)+1, &copy, NULL, NULL, NULL);
 
         if (FD_ISSET(listening, &copy)) {
-            if (peer_HandleConnection(listening, &list, mynode, master) != 0)
+            if (peer_HandleConnection(listening, list, mynode, master) != 0)
                 logger_log("Error while receiving connection...");
         } else if (FD_ISSET(webIo.socket, &copy)) {
             int res = webio_handleRequest(webIo);
@@ -53,8 +53,8 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList list,N
                 run = false;
             }
         } else {
-            for (int i = 0; i < list.length; i++) {
-                 SOCKET sock = list.array[i].socket;
+            for (int i = 0; i < (int) list->length; i++) {
+                 SOCKET sock = list->array[i].socket;
                 if(!FD_ISSET(sock,&copy))
                     continue;
                 char buf[DEFAULT_BUFLEN];
@@ -62,11 +62,11 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList list,N
                 int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
                 if (inBytes <= 0) {
                     //Peer disconnect
-                    int k = peer_getPeer(list, sock);
+                    int k = peer_getPeer(*list, sock);
                     if (k != -1) {
-                        logger_log("Peer disconnected(%s->%s)", inet_ntoa(list.array[k].sockaddr.sin_addr),
-                                   list.array[k].peerData.id);
-                        peer_removeFromList(&list, k);
+                        logger_log("Peer disconnected(%s->%s)", inet_ntoa(list->array[k].sockaddr.sin_addr),
+                                   list->array[k].peerData.id);
+                        peer_removeFromList(list, k);
                         FD_CLR(sock, master);
                     }
                 } else {
@@ -77,9 +77,9 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList list,N
                     Map m = getPacketData(buf);
 
                     char file[64];
-                    int k = peer_getPeer(list, sock);
-                    sprintf(file, "%speers/%s.txt", DEFAULT_WWW_FOLDER, list.array[k].peerData.id);
-                    logger_log("Message received from %s", list.array[k].peerData.id);
+                    int k = peer_getPeer(*list, sock);
+                    sprintf(file, "%speers/%s.txt", DEFAULT_WWW_FOLDER, list->array[k].peerData.id);
+                    logger_log("Message received from %s", list->array[k].peerData.id);
                     FILE *fp;
                     fp = fopen(file, "a");
                     fprintf(fp, "%s\n", map_getValue(m, "message"));

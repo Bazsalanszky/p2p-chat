@@ -81,7 +81,7 @@ int main(void) {
     peer_loadPeerList(&peerList1,mynode,&master);
     logger_log("Starting main loop...");
 
-    serverThread(listening,&master,webIo,peerList1,mynode);
+    serverThread(listening,&master,webIo,&peerList1,mynode);
 
 
     return 0;
