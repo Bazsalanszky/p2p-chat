@@ -288,24 +288,32 @@ static void webio_getIndex(WebIO wio, char *outputBuffer) {
     HANDLE dir;
     WIN32_FIND_DATA file_data;
     strcat(path,"/*");
-    if ((dir = FindFirstFile(path, &file_data)) == INVALID_HANDLE_VALUE)
-        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
-                         "  No offline messages!\n"
-                         "</div>\n", content);
-    else{
+    int cnt = 0;
+    if ((dir = FindFirstFile(path, &file_data)) != INVALID_HANDLE_VALUE)
+    {
         strcat(content, "<ul>\n");
         do{
             if(strcmp(file_data.cFileName,".") == 0 || strcmp(file_data.cFileName,"..") == 0) continue;
             char peer[33];
             sscanf(file_data.cFileName,"%[^.]",peer);
-            sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
+            if(!peer_ID_isFound(*wio.list,peer)) {
+                cnt++;
+                sprintf(content, "%s<li><a href=\"%s\">%s</a></li>", content, peer, peer);
+            }
         }while(FindNextFile(dir,&file_data));
         FindClose(dir);
+        strcat(content, "</ul>\n");
+    }
+    if((dir = FindFirstFile(path, &file_data)) == INVALID_HANDLE_VALUE || cnt == 0){
+        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
+                         "  No offline messages!\n"
+                         "</div>\n", content);
     }
 #else
     DIR *d;
 
     d = opendir(path);
+    int cnt = 0;
     if (d != NULL){
         strcat(content, "<ul>\n");
         struct dirent *de;
@@ -313,12 +321,15 @@ static void webio_getIndex(WebIO wio, char *outputBuffer) {
             if(strcmp(de->d_name,".") == 0 || strcmp(de->d_name,"..") == 0) continue;
             char peer[33];
             sscanf(de->d_name,"%[^.]",peer);
-            if(!peer_ID_isFound(*wio.list,peer))
-                sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
+            if(!peer_ID_isFound(*wio.list,peer)) {
+                cnt++;
+                sprintf(content, "%s<li><a href=\"%s\">%s</a></li>", content, peer, peer);
+            }
         }
         closedir(d);
         strcat(content, "</ul>\n");
-    }else{
+    }
+    if(d == NULL || cnt ==0){
         sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
                          "  No offline messages!\n"
                          "</div>\n", content);
