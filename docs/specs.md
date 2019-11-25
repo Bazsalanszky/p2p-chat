@@ -1,4 +1,4 @@
-# Peer to Peer chat Specifikáció
+# Peer to Peer chat Specifikáció{#specs}
 
 A projektem célja egy Peer to Peer chat alkalmazás létrehozása. A lényege az, hogy több gép egy hálózatot alkotva kommunikál egymással,azaz nincs egy központi szerver,ami az üzeneteket továbbítja a klienseknek,hanem minden üzenet közvetlenül megy a feladótól a címzettig.
 

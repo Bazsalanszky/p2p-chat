@@ -28,8 +28,6 @@ Config config_load(){
                   "#nickname=Pelda\n"
                   "#A program által használt port (Alapértelmezett: %s)\n"
                   "port=%s\n"
-                  "#Letiltja a külső csatlakozást (Alapértelmezett: false)\n"
-                  "localmode=false\n"
                   "#Ezne a porton lesz elérhető a felhasználói felület (Alapértelmezett: %s)\n"
                   "interface-port=%s\n"
                   "#Ebben a mappában vannak tárolva a html fájlok a felhasználói felülethez (Alapértelmezett: %s)\n"

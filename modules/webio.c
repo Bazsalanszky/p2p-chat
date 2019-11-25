@@ -313,7 +313,8 @@ static void webio_getIndex(WebIO wio, char *outputBuffer) {
             if(strcmp(de->d_name,".") == 0 || strcmp(de->d_name,"..") == 0) continue;
             char peer[33];
             sscanf(de->d_name,"%[^.]",peer);
-            sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
+            if(!peer_ID_isFound(*wio.list,peer))
+                sprintf(content,"%s<li><a href=\"%s\">%s</a></li>",content, peer, peer);
         }
         closedir(d);
         strcat(content, "</ul>\n");
@@ -344,9 +345,9 @@ static void webio_getPeerPage(WebIO wio, char *id, char *outputBuffer) {
     char *img = (online) ? "<img width=\"30\" height=\"30\" src=\"assets\\img\\on.svg\">"
                          : "<img width=\"30\" height=\"30\" src=\"assets\\img\\off.svg\">";
     char *disabled = (online) ? "" : "disabled";
-
+    char *nickname = (online) ? wio.list->array[peer_ID_getPeer(*wio.list,id)].peerData.nick:"";
     sprintf(content, "%s\n"
-                     "<h1>%s%s</h1>\n"
+                     "<h1>%s%s %s</h1>\n"
                      "<div id=\"msgs\" style=\"margin-bottom:5em\"></div>\n"
                      "<div id=\"end\"></div>\n"
                      "    <form name=\"sendmsg\" class=\"form-inline\" style=\"margin: 7px;padding: 7px;position: fixed;bottom: 0;width: 100%%;\">"
@@ -356,7 +357,7 @@ static void webio_getPeerPage(WebIO wio, char *id, char *outputBuffer) {
                      "<script src=\"assets/js/chat.js\"></script>"
                      "</body>\n"
                      "\n"
-                     "</html>", header, img, id, disabled, id);
+                     "</html>", header, img,nickname, id, disabled, id);
     strcpy(outputBuffer, content);
 }
 
