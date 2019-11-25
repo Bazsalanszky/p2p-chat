@@ -211,7 +211,7 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, Map post) {
         char folder[72];
         sprintf(folder, "%s/peers/", wio.folder);
 #if defined(_WIN32)
-        mkdir(folder);
+        CreateDirectoryA(folder,NULL);
 #else
         mkdir(folder, 0777);
 #endif
@@ -267,7 +267,7 @@ static void webio_getIndex(WebIO wio, char *outputBuffer) {
     strcat(content, "<h1>Peers:</h1>\n");
     if (wio.list->length > 0) {
         strcat(content, "<ul>\n");
-        for (int i = 0; i < wio.list->length; ++i) {
+        for (size_t i = 0; i < wio.list->length; ++i) {
             sprintf(content, "%s<li>"
                              "<a href=\"%s\">",
                     content, wio.list->array[i].peerData.id);

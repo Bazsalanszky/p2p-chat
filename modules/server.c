@@ -80,7 +80,7 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList* list,
                     int k = peer_getPeer(*list, sock);
                     sprintf(file, "%speers/", webIo.folder);
 #if defined(_WIN32)
-                    mkdir(file);
+                    CreateDirectoryA(file,NULL);
 #else
                     mkdir(file, 0777);
 #endif

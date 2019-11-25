@@ -116,7 +116,6 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     SOCKET sock = accept(listening, (struct sockaddr*)& client, &clientSize);
 
     char ip[NI_MAXHOST];
-    char service[NI_MAXSERV];
 
     memset(ip,0, NI_MAXHOST);
 
@@ -182,7 +181,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
         strcat(handshake,buf);
     }
     char peers[DEFAULT_BUFLEN] = "&peers=";
-    for (int i = 0; i < peerList->length; ++i) {
+    for (size_t i = 0; i < peerList->length; ++i) {
         strcat(peers,peerList->array[i].peerData.ip);
         strcat(peers,":");
 
@@ -223,7 +222,7 @@ void peer_initList(PeerList *list){
 
 
 bool peer_ID_isFound(PeerList list, char* id){
-    for(int i=0;i < list.length;++i){
+    for(size_t i=0;i < list.length;++i){
         if(strcmp(list.array[i].peerData.id,id)==0) {
             return true;
         }
@@ -231,7 +230,7 @@ bool peer_ID_isFound(PeerList list, char* id){
     return false;
 }
 bool peer_IP_isFound(struct PeerList list, char* ip, int port){
-    for(int i=0;i < list.length;++i){
+    for(size_t i=0;i < list.length;++i){
         if(strcmp(list.array[i].peerData.ip,ip) == 0 && list.array[i].peerData.port == port) {
             return true;
         }
@@ -255,13 +254,13 @@ void peer_addTolist(PeerList *list, struct peer p){
 }
 void peer_removeFromList(struct PeerList* list, int i){
     closesocket(list->array[i].socket);
-    for (int k=i; k < list->length-1; ++k)
+    for (size_t k=i; k < list->length-1; ++k)
         list->array[k] =list->array[k+1];
     list->length--;
 }
 
 int peer_getPeer(struct PeerList list, SOCKET socket){
-    for (int i = 0; i < list.length; ++i) {
+    for (size_t i = 0; i < list.length; ++i) {
         if(list.array[i].socket == socket)
             return i;
     }
@@ -269,7 +268,7 @@ int peer_getPeer(struct PeerList list, SOCKET socket){
 }
 
 int peer_ID_getPeer(struct PeerList list, char* c) {
-    for (int i = 0; i < list.length; ++i) {
+    for (size_t i = 0; i < list.length; ++i) {
         if(strcmp(list.array[i].peerData.id,c) == 0)
             return i;
     }

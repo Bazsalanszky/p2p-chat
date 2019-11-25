@@ -31,7 +31,7 @@ char *map_getValue(Map m, char *key) {
 }
 
 void map_dump(Map m) {
-    for (int i = 0; i < m.length; ++i) {
+    for (size_t i = 0; i < m.length; ++i) {
         printf("%s %s\n", m.pairs[i].key, m.pairs[i].value);
     }
 }
