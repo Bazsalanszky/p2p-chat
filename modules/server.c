@@ -78,7 +78,13 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList* list,
 
                     char file[64];
                     int k = peer_getPeer(*list, sock);
-                    sprintf(file, "%speers/%s.txt", DEFAULT_WWW_FOLDER, list->array[k].peerData.id);
+                    sprintf(file, "%speers/", webIo.folder);
+#if defined(_WIN32)
+                    mkdir(file);
+#else
+                    mkdir(file, 0777);
+#endif
+                    sprintf(file, "%s%s.txt",file, list->array[k].peerData.id);
                     logger_log("Message received from %s", list->array[k].peerData.id);
                     FILE *fp;
                     fp = fopen(file, "a");
