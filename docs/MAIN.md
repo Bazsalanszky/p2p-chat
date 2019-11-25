@@ -27,3 +27,4 @@ Nyissuk meg a kapott `build` mappát a Visual Studio `Developer Command Prompt`-
 ```shell script
 MSBuild p2p.sln
 ```
+
