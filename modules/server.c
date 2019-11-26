@@ -78,7 +78,6 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList *list,
                         continue;
                     Map m = getPacketData(buf);
                     if (map_getValue(m, "message") != NULL) {
-                        printf("%s\n", buf);
                         char file[64];
                         int k = peer_getPeer(*list, sock);
                         sprintf(file, "%speers/", webIo.folder);

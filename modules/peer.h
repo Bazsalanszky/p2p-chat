@@ -105,3 +105,9 @@ int peer_getPeer(struct PeerList list, SOCKET socket);
  * @note Ha nem találta a megadott azonosítót akkor (-1)-el  tér vissza.
  */
 int peer_ID_getPeer(struct PeerList list, char *id);
+/*!
+ * @brief Elküld egy hibaüzenetet egy peer-nek
+ * @param[in] msg A hibaüzenet
+ * @param[in] socket A peer socket-e
+ */
+static void sendErrorMSG(const char* msg,SOCKET socket);
