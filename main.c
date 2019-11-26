@@ -39,7 +39,7 @@ int main(void) {
     int r1 = WSAStartup(MAKEWORD(2,2),&ws);
     if(r1 != 0){
         logger_log("Error at WSAStartup.");
-        WSACleanup();
+        free(config.pairs);
         return EXIT_FAILURE;
     }
     #endif
@@ -51,6 +51,7 @@ int main(void) {
     }
     int res = tcp_bindnlisten(listening, result, SOMAXCONN);
     if (res != 0) {
+        free(config.pairs);
         return EXIT_FAILURE;
     }
     //Ez alapvetően akkor hasznos amikor a port 0-ra van állítva, azaz akkor amikor a rendszer random választ egyet.
