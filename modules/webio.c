@@ -49,7 +49,6 @@ int webio_handleRequest(WebIO wio) {
     sscanf(buf, "%s %s %*[^/]/%[^.].%s", method, file, v_major, v_minor);
     if (strcmp(v_major, "1") != 0) {
         char *response = "HTTP/1.0 505 HTTP Version Not Supportedd"
-                         "Content-Encoding: gzip\r\n"
                          "Content-Language: en\r\n"
                          "Content-Type: text/html\r\n\r\n"
                          "<h1>Error 505: HTTP version not supportedd!</h1>";
@@ -76,7 +75,6 @@ int webio_handleRequest(WebIO wio) {
         free(post.pairs);
     } else {
         char *response = "HTTP/1.0 501 Not Implemented"
-                         "Content-Encoding: gzip\r\n"
                          "Content-Language: en\r\n"
                          "Content-Type: text/html\r\n\r\n"
                          "<h1>Error 501: Method not implemented!</h1>";
@@ -389,7 +387,6 @@ static bool webio_isPeerFound(char *folder, char *id) {
 void webio_sendOKHeader(SOCKET socket, char *file) {
     char response[8192];
     sprintf(response, "HTTP/1.0 200 OK "
-                      "Content-Encoding: gzip\r\n"
                       "Content-Language: en\r\n"
                       "Content-Type: %s\r\n\r\n", webio_getMIMEtype(file));
     int res = send(socket, response, (int) strlen(response), 0);
@@ -401,7 +398,6 @@ void webio_sendOKHeader(SOCKET socket, char *file) {
 void webio_sendOKHeader_wSize(SOCKET socket, char *file, int size) {
     char response[8192];
     sprintf(response, "HTTP/1.0 200 OK "
-                      "Content-Encoding: gzip\r\n"
                       "Content-Language: en\r\n"
                       "Content-Length: %d\r\n"
                       "Content-Type: %s\r\n\r\n", size, webio_getMIMEtype(file));
@@ -414,7 +410,6 @@ void webio_sendOKHeader_wSize(SOCKET socket, char *file, int size) {
 void webio_send404Page(SOCKET socket) {
 
     char *response = "HTTP/1.0 404 Not Found "
-                     "Content-Encoding: gzip\r\n"
                      "Content-Language: en\r\n"
                      "Content-Type: text/html\r\n\r\n"
                      "<h1>Error 404 File not found!</h1>";
