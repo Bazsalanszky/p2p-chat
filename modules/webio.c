@@ -45,9 +45,9 @@ int webio_handleRequest(WebIO wio) {
         closesocket(client);
         return -1;
     }
-    char method[5],v_major[2],v_minor[3],file[50];
-    sscanf(buf, "%s %s %*[^/]/%[^.].%s",method,file,v_major,v_minor);
-    if(strcmp(v_major,"1") != 0){
+    char method[5], v_major[2], v_minor[3], file[50];
+    sscanf(buf, "%s %s %*[^/]/%[^.].%s", method, file, v_major, v_minor);
+    if (strcmp(v_major, "1") != 0) {
         char *response = "HTTP/1.0 505 HTTP Version Not Supportedd"
                          "Content-Encoding: gzip\r\n"
                          "Content-Language: en\r\n"
@@ -74,7 +74,7 @@ int webio_handleRequest(WebIO wio) {
 
         res = webio_handlePOSTrequest(client, wio, post);
         free(post.pairs);
-    } else{
+    } else {
         char *response = "HTTP/1.0 501 Not Implemented"
                          "Content-Encoding: gzip\r\n"
                          "Content-Language: en\r\n"
@@ -122,7 +122,7 @@ char *webio_getMIMEtype(char *filename) {
 
 char *webio_getFiletype(char *filename) {
     char *ext = (char *) malloc(sizeof(char) * 10);
-    strcpy(ext,"");
+    strcpy(ext, "");
     char *tmp = strtok(filename, ".");
     while (tmp != NULL) {
         strncpy(ext, tmp, 10);
@@ -206,12 +206,14 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, Map post) {
     shutdown(client, SD_BOTH);
 
     if (map_isFound(post, "id") && map_isFound(post, "message") &&
-        strcmp(map_getValue(post, "message"), "%0D%0A") != 0) {
+        (strcmp(map_getValue(post, "message"), "%0D%0A") != 0 &&
+         strcmp(map_getValue(post, "message"), "(null)") != 0)) {
+
         char file[64];
         char folder[72];
         sprintf(folder, "%s/peers/", wio.folder);
 #if defined(_WIN32)
-        CreateDirectoryA(folder,NULL);
+        CreateDirectoryA(folder, NULL);
 #else
         mkdir(folder, 0777);
 #endif
@@ -314,14 +316,14 @@ static void webio_getIndex(WebIO wio, char *outputBuffer) {
 
     d = opendir(path);
     int cnt = 0;
-    if (d != NULL){
+    if (d != NULL) {
         strcat(content, "<ul>\n");
         struct dirent *de;
         while ((de = readdir(d)) != NULL) {
-            if(strcmp(de->d_name,".") == 0 || strcmp(de->d_name,"..") == 0) continue;
+            if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) continue;
             char peer[33];
-            sscanf(de->d_name,"%[^.]",peer);
-            if(!peer_ID_isFound(*wio.list,peer)) {
+            sscanf(de->d_name, "%[^.]", peer);
+            if (!peer_ID_isFound(*wio.list, peer)) {
                 cnt++;
                 sprintf(content, "%s<li><a href=\"%s\">%s</a></li>", content, peer, peer);
             }
@@ -329,7 +331,7 @@ static void webio_getIndex(WebIO wio, char *outputBuffer) {
         closedir(d);
         strcat(content, "</ul>\n");
     }
-    if(d == NULL || cnt ==0){
+    if (d == NULL || cnt == 0) {
         sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
                          "  No offline messages!\n"
                          "</div>\n", content);
@@ -352,14 +354,14 @@ static void webio_getPeerPage(WebIO wio, char *id, char *outputBuffer) {
 
     webio_getHeader(wio.folder, header);
     strcpy(content, header);
-    bool online = peer_ID_isFound(*wio.list,id);
+    bool online = peer_ID_isFound(*wio.list, id);
     char *img = (online) ? "<img width=\"30\" height=\"30\" src=\"assets\\img\\on.svg\">"
                          : "<img width=\"30\" height=\"30\" src=\"assets\\img\\off.svg\">";
     char *disabled = (online) ? "" : "disabled";
-    char *nickname = (online) ? wio.list->array[peer_ID_getPeer(*wio.list,id)].peerData.nick:"";
+    char *nickname = (online) ? wio.list->array[peer_ID_getPeer(*wio.list, id)].peerData.nick : "";
     sprintf(content, "%s\n"
                      "<h1>%s%s %s</h1>\n"
-                     "<div id=\"msgs\" style=\"margin-bottom:5em\"></div>\n"
+                     "<div id=\"msgs\" class=\"msg-box\" style=\"margin-bottom:5em;\"></div>\n"
                      "<div id=\"end\"></div>\n"
                      "    <form name=\"sendmsg\" class=\"form-inline\" style=\"margin: 7px;padding: 7px;position: fixed;bottom: 0;width: 100%%;\">"
                      "<textarea name=\"message\" id=\"message\" class=\"form-control\" style=\"width: 90%%;display: block;\" %s></textarea>"
@@ -368,7 +370,7 @@ static void webio_getPeerPage(WebIO wio, char *id, char *outputBuffer) {
                      "<script src=\"assets/js/chat.js\"></script>"
                      "</body>\n"
                      "\n"
-                     "</html>", header, img,nickname, id, disabled, id);
+                     "</html>", header, img, nickname, id, disabled, id);
     strcpy(outputBuffer, content);
 }
 

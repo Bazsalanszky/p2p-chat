@@ -13,24 +13,22 @@
 
 SOCKET listening;
 SOCKET web_sock;
-Map config;
-PeerList peerList1;
 
 void closeSocks(void){
     logger_log("Closing socket...");
     closesocket(listening);
     closesocket(web_sock);
-    if(peerList1.size >0)free(peerList1.array);
-    if(config.size > 0) free(config.pairs);
 }
 void signalClose(int n){
     closeSocks();
 }
 
 int main(void) {
+    PeerList peerList1;
+
     atexit(closeSocks);
     signal(SIGTERM,signalClose);
-    config = config_load();
+    Map config = config_load();
 
     Node_data mynode = construct_Mynodedata(config);
     logger_log("Initialising core...");
@@ -83,6 +81,7 @@ int main(void) {
 
     serverThread(listening,&master,webIo,&peerList1,mynode);
 
-
+    free(peerList1.array);
+    free(config.pairs);
     return 0;
 }

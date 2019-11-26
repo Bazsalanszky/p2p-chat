@@ -12,20 +12,20 @@ void map_init(Map *m) {
 }
 
 bool map_isFound(Map map, char *key) {
-    char* res = map_getValue(map,key);
+    char *res = map_getValue(map, key);
     return (res == NULL) ? false : true;
 }
 
 char *map_getValue(Map m, char *key) {
     int min = 0;
-    int max = m.length-1;
-    int kp = (min+max)/2;
-    while(min <= max && strcmp(m.pairs[kp].key,key) != 0){
-        if(strcmp(m.pairs[kp].key,key) < 0)
-            min = kp+1;
+    int max = m.length - 1;
+    int kp = (min + max) / 2;
+    while (min <= max && strcmp(m.pairs[kp].key, key) != 0) {
+        if (strcmp(m.pairs[kp].key, key) < 0)
+            min = kp + 1;
         else
-            max = kp-1;
-        kp = (min+max)/2;
+            max = kp - 1;
+        kp = (min + max) / 2;
     }
     return min <= max ? m.pairs[kp].value : NULL;
 }
@@ -41,10 +41,10 @@ void map_addPair(Map *m, Pair p) {
         assert(m->length == m->size);
         size_t new_size = (m->size + 2) * 2;
         m->pairs = realloc(m->pairs, new_size * sizeof(Pair));
-		if (m->pairs == NULL) {
-			printf("OUT OF MEMORY!");
-			abort();
-		}
+        if (m->pairs == NULL) {
+            printf("OUT OF MEMORY!");
+            abort();
+        }
         m->size = new_size;
     }
     m->pairs[m->length++] = p;
@@ -58,7 +58,7 @@ Pair map_make_pair(char *key, char *value) {
     return result;
 }
 
-void map_sort(Map* m) {
+void map_sort(Map *m) {
 
     for (int i = m->length - 1; i > 0; --i) {
         for (int j = 0; j < i; ++j) {

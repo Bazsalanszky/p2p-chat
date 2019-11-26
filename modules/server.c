@@ -4,12 +4,13 @@
 //
 
 #include "server.h"
-void getSeed(char*output){
+
+void getSeed(char *output) {
     FILE *seed_file;
     seed_file = fopen("seed.txt", "r");
     if (seed_file == NULL) {
         logger_log("Seed not found! Generating a new one...");
-        char* string = generateSeed(16);
+        char *string = generateSeed(16);
         strcpy(output, string);
         free(string);
         seed_file = fopen("seed.txt", "w");
@@ -20,6 +21,7 @@ void getSeed(char*output){
     }
     fclose(seed_file);
 }
+
 Node_data construct_Mynodedata(Config cfg) {
     Node_data result;
     getSeed(result.id);
@@ -37,12 +39,12 @@ Node_data construct_Mynodedata(Config cfg) {
     return result;
 }
 
-void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList* list,Node_data mynode) {
+void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList *list, Node_data mynode) {
     bool run = true;
     while (run) {
         fd_set copy = *master;
         SOCKET last = (list->length > 0) ? list->array[list->length - 1].socket : webIo.socket;
-        int count = select(((int)last)+1, &copy, NULL, NULL, NULL);
+        int count = select(((int) last) + 1, &copy, NULL, NULL, NULL);
 
         if (FD_ISSET(listening, &copy)) {
             if (peer_HandleConnection(listening, list, mynode, master) != 0)
@@ -54,8 +56,8 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList* list,
             }
         } else {
             for (int i = 0; i < (int) list->length; i++) {
-                 SOCKET sock = list->array[i].socket;
-                if(!FD_ISSET(sock,&copy))
+                SOCKET sock = list->array[i].socket;
+                if (!FD_ISSET(sock, &copy))
                     continue;
                 char buf[DEFAULT_BUFLEN];
                 memset(buf, 0, DEFAULT_BUFLEN);
@@ -75,22 +77,25 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList* list,
                     if (strlen(buf) == 0)
                         continue;
                     Map m = getPacketData(buf);
-
-                    char file[64];
-                    int k = peer_getPeer(*list, sock);
-                    sprintf(file, "%speers/", webIo.folder);
+                    if (map_getValue(m, "message") != NULL) {
+                        printf("%s\n", buf);
+                        char file[64];
+                        int k = peer_getPeer(*list, sock);
+                        sprintf(file, "%speers/", webIo.folder);
 #if defined(_WIN32)
-                    CreateDirectoryA(file,NULL);
+                        CreateDirectoryA(file, NULL);
 #else
-                    mkdir(file, 0777);
+                        mkdir(file, 0777);
 #endif
-                    sprintf(file, "%s%s.txt",file, list->array[k].peerData.id);
-                    logger_log("Message received from %s", list->array[k].peerData.id);
-                    FILE *fp;
-                    fp = fopen(file, "a");
-                    fprintf(fp, "%s\n", map_getValue(m, "message"));
-                    fclose(fp);
-                    free(m.pairs);
+                        sprintf(file, "%s%s.txt", file, list->array[k].peerData.id);
+                        logger_log("Message received from %s", list->array[k].peerData.id);
+                        FILE *fp;
+                        fp = fopen(file, "a");
+
+                        fprintf(fp, "%s\n", map_getValue(m, "message"));
+                        fclose(fp);
+                        free(m.pairs);
+                    }
                 }
             }
         }
