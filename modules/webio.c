@@ -183,7 +183,7 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file) {
             char puf[len];
             while (total_bytes_sent < length) {
                 bytes_sent = sendfile(client,fd,0,length);
-                if(bytes_sent == -1) logger_log("Error: %s",strerror(errno));
+                if(bytes_sent == -1) printLastError();
                 total_bytes_sent += bytes_sent;
             }
         }
@@ -232,7 +232,8 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, Map post) {
         sprintf(buf, "@message=%s", map_getValue(post, "message"));
         res = send(wio.list->array[i].socket, buf, DEFAULT_BUFLEN, 0);
         if (res == SOCKET_ERROR) {
-            logger_log("Error sending message.Error: %d", errno);
+            logger_log("Error sending message!");
+            printLastError();
             return 2;
         }
         logger_log("Message sent to %s", map_getValue(post, "id"));

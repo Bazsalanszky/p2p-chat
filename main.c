@@ -39,6 +39,7 @@ int main(void) {
     int r1 = WSAStartup(MAKEWORD(2,2),&ws);
     if(r1 != 0){
         logger_log("Error at WSAStartup.");
+        printLastError();
         free(config.pairs);
         return EXIT_FAILURE;
     }

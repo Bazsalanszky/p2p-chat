@@ -48,3 +48,5 @@ struct sockaddr_in tcp_getAddr_in(SOCKET socket);
  * @return A socket portszáma
  */
 int tcp_getSockPort(SOCKET socket);
+
+void printLastError();
