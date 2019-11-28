@@ -39,9 +39,9 @@ Node_data construct_Mynodedata(Config cfg) {
     return result;
 }
 
-void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList *list, Node_data mynode) {
-    bool run = true;
-    while (run) {
+void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList *list, Node_data mynode,bool*run) {
+
+    while (*run) {
         fd_set copy = *master;
         SOCKET last = (list->length > 0) ? list->array[list->length - 1].socket : webIo.socket;
         int count = select(((int) last) + 1, &copy, NULL, NULL, NULL);

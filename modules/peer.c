@@ -7,6 +7,8 @@
 //Kouhai peer
 //Amikor mi csatlakozunk egy peerhez
 int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set *fdSet) {
+    if(strcmp(ip,"0.0.0.0") == 0)
+        return 0;
     struct sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(port);
@@ -128,6 +130,8 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     memset(ip, 0, NI_MAXHOST);
 
     inet_ntop(AF_INET, &client.sin_addr, ip, NI_MAXHOST);
+    if(strcmp(ip,"0.0.0.0") == 0)
+        return 0;
     logger_log("Incoming connection from %s...",ip);
     char buf[DEFAULT_BUFLEN];
     memset(buf, 0, DEFAULT_BUFLEN);

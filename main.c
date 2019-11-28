@@ -13,11 +13,15 @@
 
 SOCKET listening;
 SOCKET web_sock;
+bool run = true;
 
 void closeSocks(void){
-    logger_log("Closing socket...");
-    closesocket(listening);
-    closesocket(web_sock);
+    if(run) {
+        run = false;
+        logger_log("Closing socket...");
+        closesocket(listening);
+        closesocket(web_sock);
+    }
 }
 void signalClose(int n){
     closeSocks();
@@ -28,6 +32,12 @@ int main(void) {
 
     atexit(closeSocks);
     signal(SIGTERM,signalClose);
+    signal(SIGABRT,signalClose);
+    signal(SIGFPE,signalClose);
+    signal(SIGILL,signalClose);
+    signal(SIGINT,signalClose);
+    signal(SIGSEGV,signalClose);
+
     Map config = config_load();
 
     Node_data mynode = construct_Mynodedata(config);
@@ -48,6 +58,7 @@ int main(void) {
     struct addrinfo *result = NULL;
     result = tcp_createIPv4Socket(&listening, mynode.port, true);
     if (result == NULL) {
+        free(config.pairs);
         return EXIT_FAILURE;
     }
     int res = tcp_bindnlisten(listening, result, SOMAXCONN);
@@ -73,6 +84,7 @@ int main(void) {
 
     res = webio_create(config,&peerList1, &webIo);
     if (res != 0) {
+        free(config.pairs);
         return EXIT_FAILURE;
     }
     FD_SET(webIo.socket, &master);
@@ -81,7 +93,7 @@ int main(void) {
     peer_loadPeerList(&peerList1,mynode,&master);
     logger_log("Starting main loop...");
 
-    serverThread(listening,&master,webIo,&peerList1,mynode);
+    serverThread(listening,&master,webIo,&peerList1,mynode,&run);
 
     free(peerList1.array);
     free(config.pairs);

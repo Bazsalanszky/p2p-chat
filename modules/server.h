@@ -35,4 +35,4 @@ Node_data construct_Mynodedata(Config cfg);
  * @param[in] list A peerek listája
  * @param[in] mynode Az az adatstruktúra amiben a saját adatainkat tároljuk
  */
-void serverThread(SOCKET listening, fd_set* master, WebIO webIo, PeerList *list,Node_data mynode);
+void serverThread(SOCKET listening, fd_set* master, WebIO webIo, PeerList *list,Node_data mynode,bool* run);
