@@ -52,7 +52,7 @@ void serverThread(SOCKET listening, fd_set *master, WebIO webIo, PeerList *list,
         } else if (FD_ISSET(webIo.socket, &copy)) {
             int res = webio_handleRequest(webIo);
             if (res == -2) {
-                run = false;
+                *run = false;
             }
         } else {
             for (int i = 0; i < (int) list->length; i++) {
