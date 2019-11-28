@@ -16,6 +16,10 @@
 #include <assert.h>
 #include "lib/debugmalloc/debugmalloc.h"
 
+#ifndef _WIN32
+#define strtok_s(S,T,R) strtok_r(S,T,R)
+#endif
+
 //! (MAXIMUM) Ekkora mérető csomagokat küld el a program alapértelmezetten.
 #define DEFAULT_BUFLEN 4096
 /*!

@@ -34,5 +34,6 @@ Node_data construct_Mynodedata(Config cfg);
  * @param[in] webIo A felhasználói felület adatstruktúrája
  * @param[in] list A peerek listája
  * @param[in] mynode Az az adatstruktúra amiben a saját adatainkat tároljuk
+ * @param[in,out] run Logikai érték pointere ami meghatározza hogy a fő ciklus fusson-e.
  */
 void serverThread(SOCKET listening, fd_set* master, WebIO webIo, PeerList *list,Node_data mynode,bool* run);

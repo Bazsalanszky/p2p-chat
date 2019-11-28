@@ -9,6 +9,7 @@
 int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set *fdSet) {
     if(strcmp(ip,"0.0.0.0") == 0)
         return 0;
+
     struct sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(port);
@@ -55,7 +56,12 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
         closesocket(sock);
         return -1;
     }
+
     Map m = getPacketData(buf);
+    if(m.pairs == NULL){
+        free(m.pairs);
+        return -1;
+    }
     Node_data node;
     strcpy(node.ip, ip);
 
@@ -63,6 +69,7 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
         char error[129];
         sprintf(error, "Peer closed connection! Error: %s\n", map_getValue(m, "error"));
         logger_log(error);
+        free(m.pairs);
         closesocket(sock);
         return -1;
     }
@@ -73,6 +80,7 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
     } else {
         logger_log("Error: Invalid response!ID not found in handshake.");
         sendErrorMSG("ID_NOT_FOUND",sock);
+        free(m.pairs);
         closesocket(sock);
         return -1;
     }
@@ -82,6 +90,7 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
     } else {
         logger_log("Error: Invalid response!Port not found in handshake.");
         sendErrorMSG("PORT_NOT_FOUND",sock);
+        free(m.pairs);
         closesocket(sock);
         return -1;
     }
@@ -99,18 +108,20 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
     peer_addTolist(peerList, p);
 
     char *peers = map_getValue(m, "peers");
+    char *rest = peers;
     if (peers != NULL) {
         char *tmp = strtok(peers, ",");
         while (tmp != NULL) {
             char ip1[NI_MAXHOST];
             int port1;
             if (sscanf(tmp, "%[^:]:%d", ip1, &port1) != 2) {
-                tmp = strtok(NULL, ",");
+                tmp = strtok_s(NULL, ",",&rest);
                 continue;
             }
-            if (!peer_IP_isFound(*peerList, ip1, port1))
+            if (!peer_IP_isFound(*peerList, ip, port))
                 peer_ConnetctTo(ip1, port1, peerList, my, fdSet);
-            tmp = strtok(NULL, ",");
+
+            tmp = strtok_s(NULL, ",",&rest);
         }
     }
     free(m.pairs);
@@ -160,6 +171,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     } else {
         logger_log("Error: Invalid response!ID not found in handshake.");
         sendErrorMSG("ID_NOT_FOUND", sock);
+        free(m.pairs);
         closesocket(sock);
         return -1;
     }
@@ -170,6 +182,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     } else {
         logger_log("Error: Invalid response!Port not found in handshake.");
         sendErrorMSG("PORT_NOT_FOUND", sock);
+        free(m.pairs);
         closesocket(sock);
         return -1;
     }
@@ -180,6 +193,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     if (peer_ID_isFound(*peerList, node.id)) {
         logger_log("Handshake received, but the id sent is taken! Dropping peer...");
         sendErrorMSG("ID_TAKEN", sock);
+        free(m.pairs);
         closesocket(sock);
         return -1;
     }
