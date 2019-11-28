@@ -360,7 +360,7 @@ static void webio_getPeerPage(WebIO wio, char *id, char *outputBuffer) {
     char *nickname = (online) ? wio.list->array[peer_ID_getPeer(*wio.list, id)].peerData.nick : "";
     sprintf(content, "%s\n"
                      "<h1>%s%s %s</h1>\n"
-                     "<div id=\"msgs\" class=\"msg-box\" style=\"margin-bottom:5em;\"></div>\n"
+                     "<div id=\"msgs\" class=\"msg-box\" style=\"margin-bottom:5em;\" onscroll=\"scroller()\"></div>\n"
                      "<div id=\"end\"></div>\n"
                      "    <form name=\"sendmsg\" class=\"form-inline\" style=\"margin: 7px;padding: 7px;position: fixed;bottom: 0;width: 100%%;\">"
                      "<textarea name=\"message\" id=\"message\" class=\"form-control\" style=\"width: 90%%;display: block;\" %s></textarea>"

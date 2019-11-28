@@ -11,6 +11,7 @@ function encodeQueryData(data) {
         ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
     return ret.join('&');
 }
+var scrollDown = true;
 
 function submitForm() {
     var formElement = document.forms.namedItem("sendmsg")
@@ -71,5 +72,12 @@ function loadMessages(arr) {
     out += "<div id='endl'></div>";
     var elem = document.getElementById("msgs");
     elem.innerHTML = out;
-    document.getElementById('endl').scrollIntoView();
+    if(scrollDown)document.getElementById('endl').scrollIntoView();
+}
+
+function scroller () {
+    var e = document.getElementById("msgs");
+    if(e.scrollTop + 1 >= (e.scrollHeight-e.offsetHeight) )
+        scrollDown = true;
+    else scrollDown = false;
 }
