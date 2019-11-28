@@ -7,9 +7,10 @@
 //Kouhai peer
 //Amikor mi csatlakozunk egy peerhez
 int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set *fdSet) {
-    if(strcmp(ip,"0.0.0.0") == 0)
+    if (strcmp(ip, "0.0.0.0") == 0)
         return 0;
-
+    if (peer_IP_isFound(*peerList, ip, port))
+        return 1;
     struct sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(port);
@@ -25,7 +26,7 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
     }
     logger_log("Connected to peer!Sending handshake...");
     char handshake[DEFAULT_BUFLEN];
-    sprintf(handshake, "@id=%s&port=%d&version=%s", my.id, my.port,P2P_CURRENT_VERSION);
+    sprintf(handshake, "@id=%s&port=%d&version=%s", my.id, my.port, P2P_CURRENT_VERSION);
     if (strlen(my.nick) != 0) {
         char buf[DEFAULT_BUFLEN];
         memset(buf, 0, DEFAULT_BUFLEN);
@@ -52,13 +53,13 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
 
     if (buf[0] != '@') {
         logger_log("Error: Invalid response!");
-        sendErrorMSG("INVALID_RESPONSE",sock);
+        sendErrorMSG("INVALID_RESPONSE", sock);
         closesocket(sock);
         return -1;
     }
 
     Map m = getPacketData(buf);
-    if(m.pairs == NULL){
+    if (m.pairs == NULL) {
         free(m.pairs);
         return -1;
     }
@@ -79,7 +80,7 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
         strcpy(node.id, id);
     } else {
         logger_log("Error: Invalid response!ID not found in handshake.");
-        sendErrorMSG("ID_NOT_FOUND",sock);
+        sendErrorMSG("ID_NOT_FOUND", sock);
         free(m.pairs);
         closesocket(sock);
         return -1;
@@ -89,7 +90,7 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
         node.port = atoi(port_str);
     } else {
         logger_log("Error: Invalid response!Port not found in handshake.");
-        sendErrorMSG("PORT_NOT_FOUND",sock);
+        sendErrorMSG("PORT_NOT_FOUND", sock);
         free(m.pairs);
         closesocket(sock);
         return -1;
@@ -110,18 +111,17 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
     char *peers = map_getValue(m, "peers");
     char *rest = peers;
     if (peers != NULL) {
-        char *tmp = strtok(peers, ",");
+        char *tmp = strtok_s(peers, ",", &rest);
         while (tmp != NULL) {
             char ip1[NI_MAXHOST];
             int port1;
             if (sscanf(tmp, "%[^:]:%d", ip1, &port1) != 2) {
-                tmp = strtok_s(NULL, ",",&rest);
+                tmp = strtok_s(NULL, ",", &rest);
                 continue;
             }
-            if (!peer_IP_isFound(*peerList, ip, port))
-                peer_ConnetctTo(ip1, port1, peerList, my, fdSet);
 
-            tmp = strtok_s(NULL, ",",&rest);
+            peer_ConnetctTo(ip1, port1, peerList, my, fdSet);
+            tmp = strtok_s(NULL, ",", &rest);
         }
     }
     free(m.pairs);
@@ -141,9 +141,9 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     memset(ip, 0, NI_MAXHOST);
 
     inet_ntop(AF_INET, &client.sin_addr, ip, NI_MAXHOST);
-    if(strcmp(ip,"0.0.0.0") == 0)
+    if (strcmp(ip, "0.0.0.0") == 0)
         return 0;
-    logger_log("Incoming connection from %s...",ip);
+    logger_log("Incoming connection from %s...", ip);
     char buf[DEFAULT_BUFLEN];
     memset(buf, 0, DEFAULT_BUFLEN);
     int inBytes = recv(sock, buf, DEFAULT_BUFLEN, 0);
@@ -155,7 +155,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     }
     if (buf[0] != '@') {
         logger_log("Error: Invalid response!");
-        sendErrorMSG("INVALID_RESPONSE",sock);
+        sendErrorMSG("INVALID_RESPONSE", sock);
         closesocket(sock);
         return -1;
     }
@@ -200,7 +200,7 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     free(m.pairs);
     logger_log("Handshake recived! Sending response!");
     char handshake[DEFAULT_BUFLEN];
-    sprintf(handshake, "@id=%s&port=%d&version=%s", my.id, my.port,P2P_CURRENT_VERSION);
+    sprintf(handshake, "@id=%s&port=%d&version=%s", my.id, my.port, P2P_CURRENT_VERSION);
 
     if (strlen(my.nick) != 0) {
         memset(buf, 0, DEFAULT_BUFLEN);

@@ -53,8 +53,8 @@ void map_addPair(Map *m, Pair p) {
 
 Pair map_make_pair(char *key, char *value) {
     Pair result;
-    strcpy(result.key, key);
-    strcpy(result.value, value);
+    strncpy(result.key, key,65);
+    strncpy(result.value, value,1024);
     return result;
 }
 
