@@ -111,3 +111,37 @@ int peer_ID_getPeer(struct PeerList list, char *id);
  * @param[in] socket A peer socket-e
  */
 static void sendErrorMSG(const char* msg,SOCKET socket);
+/*!
+ * @brief A kézfogásból létrehozza a peer adatainak struktúráját(Node_data)
+ * @param[in] handshake Az a Map ami a kézfogás szövegéből lett létrehozva
+ * @param[in] list A peerek listájának mutatója
+ * @param[in,out] sock A peer socket-e
+ * @param[out,in] result A kész adatstruktúra
+ * @return A művelet sikerességét jelző szám.Ha nulla(`0`) akkor a művelet sikeres volt,egyébkét sikertelen.
+ */
+static int constructNodeData(Map *handshake, const PeerList *list, SOCKET *sock, Node_data *result);
+/*!
+ * @brief Létrehozza a peerhez csatlakozásához szükséges adatokat
+ * @param[in] ip A peer IP címe
+ * @param[in] port A peer portszáma
+ * @param[out] hint A peer socketéhez tartozó címstruktúra
+ * @return A peer socket-e
+ */
+static SOCKET initPeer(char *ip, int port, struct sockaddr_in *hint);
+/*!
+ * @brief Csatlakozik azokhoz a peerekhez,amelyeket egy másik peer küldött
+ * @param[in] peers A peerek IP címei és port számai vesszővel(`,`) elválasztva
+ * @param[in] my Az az adatstruktúra ami a saját adatainkat tároljuk
+ * @param[in,out] fdSet
+ * @param[in,out] list
+ * @return A művelet sikerességét jelző szám.Ha nulla(`0`) akkor a művelet sikeres volt,egyébkét sikertelen.
+ */
+static int connectToReceivedPeers(char *peers, Node_data my, FD_SET *fdSet, PeerList *list);
+/*!
+ * @brief Létrehoz egy kézfogás (`handshake`) szövegét
+ * @param[in] my Az az adatstruktúra ami a saját adatainkat tároljuk
+ * @param[in] peerList A peerek listája
+ * @param[out] handshake A kézfogás szövege
+ * @note Ha a `peerList` paramétereként `NULL`-t kap, akkor nem küldi el a peerek listáját (Csatlakozáskor hasznos)
+ */
+static void constructHandshake(Node_data my, const PeerList *peerList, char handshake[]);

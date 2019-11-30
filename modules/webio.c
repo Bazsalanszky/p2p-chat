@@ -1,6 +1,6 @@
 //
 // Készítette: Toldi Balázs Ádám
-// Dátum:  2019. 10. 14..
+// Dátum:  2019. 10. 14.
 //
 #include "webio.h"
 

@@ -12,30 +12,17 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
     if (peer_IP_isFound(*peerList, ip, port))
         return 1;
     struct sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    inet_pton(AF_INET, ip, &hint.sin_addr);
-
-    SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sock == SOCKET_ERROR) {
-        return -1;
-    }
-    int res = connect(sock, (struct sockaddr *) &hint, sizeof(hint));
-    if (res == SOCKET_ERROR) {
-        return -1;
+    SOCKET sock = initPeer(ip, port, &hint);
+    if (sock == INVALID_SOCKET) {
+        logger_log("Error initialising peer socket!");
+        return 1;
     }
     logger_log("Connected to peer!Sending handshake...");
     char handshake[DEFAULT_BUFLEN];
-    sprintf(handshake, "@id=%s&port=%d&version=%s", my.id, my.port, P2P_CURRENT_VERSION);
-    if (strlen(my.nick) != 0) {
-        char buf[DEFAULT_BUFLEN];
-        memset(buf, 0, DEFAULT_BUFLEN);
-        sprintf(buf, "&nickname=%s", my.nick);
-        strcat(handshake, buf);
-    }
-    res = send(sock, handshake, strlen(handshake), 0);
+    constructHandshake(my,NULL,handshake);
+    int res = send(sock, handshake, strlen(handshake), 0);
     if (res == SOCKET_ERROR) {
-        logger_log("Error sending peer list!Disconnecting...");
+        logger_log("Error sending handshake!Disconnecting...");
         printLastError();
         closesocket(sock);
         return -1;
@@ -50,56 +37,17 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
         closesocket(sock);
         return -1;
     }
-
-    if (buf[0] != '@') {
+    if (handshake[0] != '@') {
         logger_log("Error: Invalid response!");
         sendErrorMSG("INVALID_RESPONSE", sock);
         closesocket(sock);
         return -1;
     }
-
-    Map m = getPacketData(buf);
-    if (m.pairs == NULL) {
-        free(m.pairs);
-        return -1;
-    }
     Node_data node;
     strcpy(node.ip, ip);
-
-    if (map_isFound(m, "valid") && strcmp("false", map_getValue(m, "valid")) == 0) {
-        char error[129];
-        sprintf(error, "Peer closed connection! Error: %s\n", map_getValue(m, "error"));
-        logger_log(error);
-        free(m.pairs);
-        closesocket(sock);
-        return -1;
-    }
-
-    char *id = map_getValue(m, "id");
-    if (id != NULL) {
-        strcpy(node.id, id);
-    } else {
-        logger_log("Error: Invalid response!ID not found in handshake.");
-        sendErrorMSG("ID_NOT_FOUND", sock);
-        free(m.pairs);
-        closesocket(sock);
-        return -1;
-    }
-    char *port_str = map_getValue(m, "port");
-    if (port_str != NULL) {
-        node.port = atoi(port_str);
-    } else {
-        logger_log("Error: Invalid response!Port not found in handshake.");
-        sendErrorMSG("PORT_NOT_FOUND", sock);
-        free(m.pairs);
-        closesocket(sock);
-        return -1;
-    }
-    memset(node.nick, 0, 30);
-    char *nickname = map_getValue(m, "nickname");
-    if (nickname != NULL) {
-        strcpy(node.nick, nickname);
-    }
+    Map m = getPacketData(buf);
+    if (constructNodeData(&m, peerList, &sock, &node) != 0)
+        return 1;
 
     Peer p;
     p.peerData = node;
@@ -107,23 +55,9 @@ int peer_ConnetctTo(char *ip, int port, PeerList *peerList, Node_data my, fd_set
     p.sockaddr = hint;
     FD_SET(sock, fdSet);
     peer_addTolist(peerList, p);
-
     char *peers = map_getValue(m, "peers");
-    char *rest = peers;
-    if (peers != NULL) {
-        char *tmp = strtok_s(peers, ",", &rest);
-        while (tmp != NULL) {
-            char ip1[NI_MAXHOST];
-            int port1;
-            if (sscanf(tmp, "%[^:]:%d", ip1, &port1) != 2) {
-                tmp = strtok_s(NULL, ",", &rest);
-                continue;
-            }
+    connectToReceivedPeers(peers, node, fdSet, peerList);
 
-            peer_ConnetctTo(ip1, port1, peerList, my, fdSet);
-            tmp = strtok_s(NULL, ",", &rest);
-        }
-    }
     free(m.pairs);
     logger_log("Peer validated (%s->%s)!", inet_ntoa(hint.sin_addr), node.id);
     return 0;
@@ -135,14 +69,12 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
     struct sockaddr_in client;
     int clientSize = sizeof(client);
     SOCKET sock = accept(listening, (struct sockaddr *) &client, &clientSize);
-
     char ip[NI_MAXHOST];
-
     memset(ip, 0, NI_MAXHOST);
-
     inet_ntop(AF_INET, &client.sin_addr, ip, NI_MAXHOST);
     if (strcmp(ip, "0.0.0.0") == 0)
         return 0;
+
     logger_log("Incoming connection from %s...", ip);
     char buf[DEFAULT_BUFLEN];
     memset(buf, 0, DEFAULT_BUFLEN);
@@ -159,71 +91,15 @@ int peer_HandleConnection(SOCKET listening, PeerList *peerList, Node_data my, fd
         closesocket(sock);
         return -1;
     }
-
-
     Map m = getPacketData(buf);
     Node_data node;
     strcpy(node.ip, ip);
-
-    char *id = map_getValue(m, "id");
-    if (id != NULL) {
-        strcpy(node.id, id);
-    } else {
-        logger_log("Error: Invalid response!ID not found in handshake.");
-        sendErrorMSG("ID_NOT_FOUND", sock);
-        free(m.pairs);
-        closesocket(sock);
-        return -1;
-    }
-
-    char *port = map_getValue(m, "port");
-    if (port != NULL) {
-        node.port = atoi(port);
-    } else {
-        logger_log("Error: Invalid response!Port not found in handshake.");
-        sendErrorMSG("PORT_NOT_FOUND", sock);
-        free(m.pairs);
-        closesocket(sock);
-        return -1;
-    }
-    char *nickname = map_getValue(m, "nickname");
-    if (map_isFound(m, "nickname")) {
-        strncpy(node.nick, nickname, 29);
-    }
-    if (peer_ID_isFound(*peerList, node.id)) {
-        logger_log("Handshake received, but the id sent is taken! Dropping peer...");
-        sendErrorMSG("ID_TAKEN", sock);
-        free(m.pairs);
-        closesocket(sock);
-        return -1;
-    }
+    if (constructNodeData(&m, peerList, &sock, &node) != 0)
+        return 1;
     free(m.pairs);
     logger_log("Handshake recived! Sending response!");
     char handshake[DEFAULT_BUFLEN];
-    sprintf(handshake, "@id=%s&port=%d&version=%s", my.id, my.port, P2P_CURRENT_VERSION);
-
-    if (strlen(my.nick) != 0) {
-        memset(buf, 0, DEFAULT_BUFLEN);
-        sprintf(buf, "&nickname=%s", my.nick);
-        strcat(handshake, buf);
-    }
-    char peers[DEFAULT_BUFLEN] = "&peers=";
-    for (size_t i = 0; i < peerList->length; ++i) {
-        strcat(peers, peerList->array[i].peerData.ip);
-        strcat(peers, ":");
-
-        char port[10];
-        sprintf(port, "%d", peerList->array[i].peerData.port);
-
-        strcat(peers, port);
-        strcat(peers, ",");
-    }
-    if (strcmp("&peers=", peers) != 0) {
-        //Mivel minden ip után rak egy vesszőt (",") így az utolsó utánit el kell távolítani
-        peers[strlen(peers) - 1] = '\0';
-        strcat(handshake, peers);
-    }
-
+    constructHandshake(my,peerList,handshake);
     int res = send(sock, handshake, strlen(handshake), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error sending handshake!Disconnecting...");
@@ -311,6 +187,123 @@ void sendErrorMSG(const char *msg, SOCKET socket) {
         logger_log("Error sending error message!Disconnecting...");
         printLastError();
         closesocket(socket);
+    }
+}
+
+int constructNodeData(Map *handshake, const PeerList *list, SOCKET *sock, Node_data *result) {
+
+    if (handshake->pairs == NULL) {
+        free(handshake->pairs);
+        return -1;
+    }
+
+    if (map_isFound(*handshake, "valid") && strcmp("false", map_getValue(*handshake, "valid")) == 0) {
+        char error[129];
+        sprintf(error, "Peer closed connection! Error: %s\n", map_getValue(*handshake, "error"));
+        logger_log(error);
+        free(handshake->pairs);
+        closesocket(*sock);
+        return -1;
+    }
+
+    char *id = map_getValue(*handshake, "id");
+    if (id != NULL) {
+        strcpy(result->id, id);
+    } else {
+        logger_log("Error: Invalid response!ID not found in handshake.");
+        sendErrorMSG("ID_NOT_FOUND", *sock);
+        free(handshake->pairs);
+        closesocket(*sock);
+        return -1;
+    }
+    char *port_str = map_getValue(*handshake, "port");
+    if (port_str != NULL) {
+        result->port = atoi(port_str);
+    } else {
+        logger_log("Error: Invalid response!Port not found in handshake.");
+        sendErrorMSG("PORT_NOT_FOUND", *sock);
+        free(handshake->pairs);
+        closesocket(*sock);
+        return -1;
+    }
+    memset(result->nick, 0, 30);
+    char *nickname = map_getValue(*handshake, "nickname");
+    if (nickname != NULL) {
+        strcpy(result->nick, nickname);
+    }
+    if (peer_ID_isFound(*list, result->id)) {
+        logger_log("Handshake received, but the id sent is taken! Dropping peer...");
+        sendErrorMSG("ID_TAKEN", *sock);
+        free(handshake->pairs);
+        closesocket(*sock);
+        return -1;
+    }
+    return 0;
+}
+
+SOCKET initPeer(char *ip, int port, struct sockaddr_in *hint) {
+    hint->sin_family = AF_INET;
+    hint->sin_port = htons(port);
+    inet_pton(AF_INET, ip, &hint->sin_addr);
+
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sock == SOCKET_ERROR) {
+        printLastError();
+        closesocket(sock);
+        return INVALID_SOCKET;
+    }
+    int res = connect(sock, (struct sockaddr *) hint, sizeof(*hint));
+    if (res == SOCKET_ERROR) {
+        printLastError();
+        closesocket(sock);
+        return INVALID_SOCKET;
+    }
+
+    return sock;
+}
+
+int connectToReceivedPeers(char *peers, Node_data my, FD_SET *fdSet, PeerList *list) {
+    char *rest = peers;
+    if (peers != NULL) {
+        char *tmp = strtok_s(peers, ",", &rest);
+        while (tmp != NULL) {
+            char ip1[NI_MAXHOST];
+            int port1;
+            if (sscanf(tmp, "%[^:]:%d", ip1, &port1) != 2) {
+                tmp = strtok_s(NULL, ",", &rest);
+                continue;
+            }
+
+            peer_ConnetctTo(ip1, port1, list, my, fdSet);
+            tmp = strtok_s(NULL, ",", &rest);
+        }
+    }
+    return 0;
+}
+
+void constructHandshake(Node_data my, const PeerList *peerList, char *handshake) {
+    sprintf(handshake, "@id=%s&port=%d&version=%s", my.id, my.port, P2P_CURRENT_VERSION);
+
+    if (strlen(my.nick) != 0) {
+        sprintf(handshake, "%s&nickname=%s",handshake, my.nick);
+    }
+    if(peerList != NULL) {
+        char peers[DEFAULT_BUFLEN] = "&peers=";
+        for (size_t i = 0; i < peerList->length; ++i) {
+            strcat(peers, peerList->array[i].peerData.ip);
+            strcat(peers, ":");
+
+            char port[10];
+            sprintf(port, "%d", peerList->array[i].peerData.port);
+
+            strcat(peers, port);
+            strcat(peers, ",");
+        }
+        if (strcmp("&peers=", peers) != 0) {
+            //Mivel minden ip után rak egy vesszőt (",") így az utolsó utánit el kell távolítani
+            peers[strlen(peers) - 1] = '\0';
+            strcat(handshake, peers);
+        }
     }
 }
 
