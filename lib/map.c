@@ -59,7 +59,6 @@ Pair map_make_pair(char *key, char *value) {
 }
 
 void map_sort(Map *m) {
-
     for (int i = m->length - 1; i > 0; --i) {
         for (int j = 0; j < i; ++j) {
             if (strcmp(m->pairs[j].key, m->pairs[j + 1].key) > 0) {

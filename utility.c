@@ -21,6 +21,7 @@ char* generateSeed(int len){
     result[len] = '\0';
     return result;
 }
+
 Map getPacketData(char* text){
 
     Map result;

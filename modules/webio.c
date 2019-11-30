@@ -152,40 +152,7 @@ static int webio_handleGETrequest(SOCKET client, WebIO wio, char *file) {
         return -2;
     } else {
         strcat(path, file);
-        //File küldés windows-on
-#ifdef _WIN32
-        HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ,
-                                  NULL,
-                                  OPEN_EXISTING,
-                                  FILE_ATTRIBUTE_NORMAL,
-                                  NULL);
-        DWORD size = GetFileSize(file, NULL);
-        if (file == INVALID_HANDLE_VALUE || size < 0)
-            webio_send404Page(client);
-        else {
-            webio_sendOKHeader_wSize(client, path, size);
-            TransmitFile(client, file, 0, 0, NULL, NULL, 0);
-            CloseHandle(file);
-        }
-#else
-        int fd = open(path, O_RDONLY);
-        if (fd == -1)
-            webio_send404Page(client);
-        else {
-            struct stat stat_struct;
-            fstat(fd, &stat_struct);
-            int length = stat_struct.st_size;
-            webio_sendOKHeader(client, path);
-            size_t total_bytes_sent = 0;
-            ssize_t bytes_sent;
-            char puf[len];
-            while (total_bytes_sent < length) {
-                bytes_sent = sendfile(client,fd,0,length);
-                if(bytes_sent == -1) printLastError();
-                total_bytes_sent += bytes_sent;
-            }
-        }
-#endif
+        sendFile(path,client);
         shutdown(client, SD_BOTH);
     }
     closesocket(client);
@@ -199,13 +166,15 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, Map post) {
     int res = send(client, response, (int) strlen(response), 0);
     if (res == SOCKET_ERROR) {
         logger_log("Error with io");
+        printLastError();
         return -1;
     }
     shutdown(client, SD_BOTH);
 
     if (map_isFound(post, "id") && map_isFound(post, "message") &&
         (strcmp(map_getValue(post, "message"), "%0D%0A") != 0 &&
-         strcmp(map_getValue(post, "message"), "(null)") != 0)) {
+         strcmp(map_getValue(post, "message"), "(null)") != 0) &&
+        peer_ID_isFound(*wio.list, map_getValue(post, "id"))) {
 
         char file[64];
         char folder[72];
@@ -218,6 +187,8 @@ static int webio_handlePOSTrequest(SOCKET client, WebIO wio, Map post) {
         sprintf(file, "%s%s.txt", folder, map_getValue(post, "id"));
         FILE *f;
         f = fopen(file, "a");
+        if (f == NULL)
+            return -2;
         fprintf(f, "Me: %s\n", map_getValue(post, "message"));
         fclose(f);
         char buf[DEFAULT_BUFLEN];
@@ -283,60 +254,7 @@ static void webio_getIndex(WebIO wio, char *outputBuffer) {
                          "  No peers connected!\n"
                          "</div>\n", content);
     strcat(content, "<h1>Offline messages:</h1>\n");
-    char path[65];
-    sprintf(path, "%s/peers/", wio.folder);
-#ifdef _MSC_VER
-    HANDLE dir;
-    WIN32_FIND_DATA file_data;
-    strcat(path,"/*");
-    int cnt = 0;
-    if ((dir = FindFirstFile(path, &file_data)) != INVALID_HANDLE_VALUE)
-    {
-        strcat(content, "<ul>\n");
-        do{
-            if(strcmp(file_data.cFileName,".") == 0 || strcmp(file_data.cFileName,"..") == 0) continue;
-            char peer[33];
-            sscanf(file_data.cFileName,"%[^.]",peer);
-            if(!peer_ID_isFound(*wio.list,peer)) {
-                cnt++;
-                sprintf(content, "%s<li><a href=\"%s\">%s</a></li>", content, peer, peer);
-            }
-        }while(FindNextFile(dir,&file_data));
-        FindClose(dir);
-        strcat(content, "</ul>\n");
-    }
-    if((dir = FindFirstFile(path, &file_data)) == INVALID_HANDLE_VALUE || cnt == 0){
-        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
-                         "  No offline messages!\n"
-                         "</div>\n", content);
-    }
-#else
-    DIR *d;
-
-    d = opendir(path);
-    int cnt = 0;
-    if (d != NULL) {
-        strcat(content, "<ul>\n");
-        struct dirent *de;
-        while ((de = readdir(d)) != NULL) {
-            if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) continue;
-            char peer[33];
-            sscanf(de->d_name, "%[^.]", peer);
-            if (!peer_ID_isFound(*wio.list, peer)) {
-                cnt++;
-                sprintf(content, "%s<li><a href=\"%s\">%s</a></li>", content, peer, peer);
-            }
-        }
-        closedir(d);
-        strcat(content, "</ul>\n");
-    }
-    if (d == NULL || cnt == 0) {
-        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
-                         "  No offline messages!\n"
-                         "</div>\n", content);
-    }
-#endif
-
+    getOfflineMessages(wio, content);
 
     sprintf(content, "%s<script>setTimeout(function(){\n"
                      "   window.location.reload(1);\n"
@@ -427,4 +345,95 @@ void webio_sendPage(SOCKET socket, char *content) {
         logger_log("Error sending page!");
     }
     shutdown(socket, SD_BOTH);
+}
+
+void getOfflineMessages(WebIO wio, char *content) {
+    char path[65];
+    sprintf(path, "%s/peers/", wio.folder);
+#ifdef _MSC_VER
+    HANDLE dir;
+    WIN32_FIND_DATA file_data;
+    strcat(path,"/*");
+    int cnt = 0;
+    if ((dir = FindFirstFile(path, &file_data)) != INVALID_HANDLE_VALUE)
+    {
+        strcat(content, "<ul>\n");
+        do{
+            if(strcmp(file_data.cFileName,".") == 0 || strcmp(file_data.cFileName,"..") == 0) continue;
+            char peer[33];
+            sscanf(file_data.cFileName,"%[^.]",peer);
+            if(!peer_ID_isFound(*wio.list,peer)) {
+                cnt++;
+                sprintf(content, "%s<li><a href=\"%s\">%s</a></li>", content, peer, peer);
+            }
+        }while(FindNextFile(dir,&file_data));
+        FindClose(dir);
+        strcat(content, "</ul>\n");
+    }
+    if((dir = FindFirstFile(path, &file_data)) == INVALID_HANDLE_VALUE || cnt == 0){
+        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
+                         "  No offline messages!\n"
+                         "</div>\n", content);
+    }
+#else
+    DIR *d;
+    d = opendir(path);
+    int cnt = 0;
+    if (d != NULL) {
+        strcat(content, "<ul>\n");
+        struct dirent *de;
+        while ((de = readdir(d)) != NULL) {
+            if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) continue;
+            char peer[33];
+            sscanf(de->d_name, "%[^.]", peer);
+            if (!peer_ID_isFound(*wio.list, peer)) {
+                cnt++;
+                sprintf(content, "%s<li><a href=\"%s\">%s</a></li>", content, peer, peer);
+            }
+        }
+        closedir(d);
+        strcat(content, "</ul>\n");
+    }
+    if (d == NULL || cnt == 0) {
+        sprintf(content, "%s<div class=\"alert alert-warning\" role=\"alert\">\n"
+                         "  No offline messages!\n"
+                         "</div>\n", content);
+    }
+#endif
+}
+
+void sendFile(char *path, SOCKET client) {
+#ifdef _WIN32
+    HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ,
+                              NULL,
+                              OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL,
+                              NULL);
+    DWORD size = GetFileSize(file, NULL);
+    if (file == INVALID_HANDLE_VALUE || size < 0)
+        webio_send404Page(client);
+    else {
+        webio_sendOKHeader_wSize(client, path, size);
+        TransmitFile(client, file, 0, 0, NULL, NULL, 0);
+        CloseHandle(file);
+    }
+#else
+    int fd = open(path, O_RDONLY);
+        if (fd == -1)
+            webio_send404Page(client);
+        else {
+            struct stat stat_struct;
+            fstat(fd, &stat_struct);
+            int length = stat_struct.st_size;
+            webio_sendOKHeader(client, path);
+            size_t total_bytes_sent = 0;
+            ssize_t bytes_sent;
+            char puf[len];
+            while (total_bytes_sent < length) {
+                bytes_sent = sendfile(client,fd,0,length);
+                if(bytes_sent == -1) printLastError();
+                total_bytes_sent += bytes_sent;
+            }
+        }
+#endif
 }

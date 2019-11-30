@@ -121,3 +121,7 @@ static void webio_sendPage(SOCKET socket, char* content);
  * @param[in] socket A socket amire a header-t szeretnénk küldeni
  */
 static void webio_send404Page(SOCKET socket);
+
+static void getOfflineMessages(WebIO wio, char *content);
+
+static void sendFile(char* path, SOCKET client);
