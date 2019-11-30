@@ -136,7 +136,7 @@ static SOCKET initPeer(char *ip, int port, struct sockaddr_in *hint);
  * @param[in,out] list
  * @return A művelet sikerességét jelző szám.Ha nulla(`0`) akkor a művelet sikeres volt,egyébkét sikertelen.
  */
-static int connectToReceivedPeers(char *peers, Node_data my, FD_SET *fdSet, PeerList *list);
+static int connectToReceivedPeers(char *peers, Node_data my, FD_SET *fd_set, PeerList *list);
 /*!
  * @brief Létrehoz egy kézfogás (`handshake`) szövegét
  * @param[in] my Az az adatstruktúra ami a saját adatainkat tároljuk

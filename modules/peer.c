@@ -262,7 +262,7 @@ SOCKET initPeer(char *ip, int port, struct sockaddr_in *hint) {
     return sock;
 }
 
-int connectToReceivedPeers(char *peers, Node_data my, FD_SET *fdSet, PeerList *list) {
+int connectToReceivedPeers(char *peers, Node_data my, fd_set *fdSet, PeerList *list) {
     char *rest = peers;
     if (peers != NULL) {
         char *tmp = strtok_s(peers, ",", &rest);
