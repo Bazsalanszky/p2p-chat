@@ -428,7 +428,7 @@ void sendFile(char *path, SOCKET client) {
             webio_sendOKHeader(client, path);
             size_t total_bytes_sent = 0;
             ssize_t bytes_sent;
-            char puf[len];
+
             while (total_bytes_sent < length) {
                 bytes_sent = sendfile(client,fd,0,length);
                 if(bytes_sent == -1) printLastError();
