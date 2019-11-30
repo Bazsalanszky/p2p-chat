@@ -121,7 +121,15 @@ static void webio_sendPage(SOCKET socket, char* content);
  * @param[in] socket A socket amire a header-t szeretnénk küldeni
  */
 static void webio_send404Page(SOCKET socket);
-
+/*!
+ * @brief Kigyűjti az offline üzeneteket egy sztringbe
+ * @param[in] wio A felhasználói felület struktúrája
+ * @param[in,out] content A sztring, amibe a írni fog
+ */
 static void getOfflineMessages(WebIO wio, char *content);
-
+/*!
+ * @brief Elküld egy file.
+ * @param[in] path A file helye
+ * @param[in] client A fogadó socket-e
+ */
 static void sendFile(char* path, SOCKET client);
