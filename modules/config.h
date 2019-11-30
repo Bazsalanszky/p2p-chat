@@ -20,7 +20,7 @@
 //! Az alapértelmezett mappa, ami felhasználói felület számára szükséges fájlokat tárolja
 #define DEFAULT_WWW_FOLDER "htdocs/"
 //! A program jelenlegi verziószáma
-#define P2P_CURRENT_VERSION "1.0"
+#define P2P_CURRENT_VERSION "1.2"
 /*!
  * @brief Betölti a `config.ini` fájlt és létrehoz egy Map struktúrát abból.
  * @return A betöltött file Map struktúrája
